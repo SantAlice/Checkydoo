@@ -149,11 +149,7 @@ export function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="ring-connector">
-        <img src="/ring.png" alt="" />
-      </div>
-
-      {/* Распределение времени */}
+{/* Распределение времени */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
           Баланс времени
@@ -161,11 +157,7 @@ export function AnalyticsPage() {
         <PieChart data={analytics.timeDistribution} />
       </div>
 
-      <div className="ring-connector">
-        <img src="/ring.png" alt="" />
-      </div>
-
-      {/* Недельный тренд */}
+{/* Недельный тренд */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
           Динамика задач
@@ -177,11 +169,7 @@ export function AnalyticsPage() {
         <BarChart data={analytics.weeklyTrend} />
       </div>
 
-      <div className="ring-connector">
-        <img src="/ring.png" alt="" />
-      </div>
-
-      {/* Просрочки */}
+{/* Просрочки */}
       {analytics.overdueAnalysis.totalOverdue > 0 && (
         <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
           <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
@@ -218,11 +206,7 @@ export function AnalyticsPage() {
         </div>
       )}
 
-      <div className="ring-connector">
-        <img src="/ring.png" alt="" />
-      </div>
-
-      {/* ИИ-рекомендации */}
+{/* ИИ-рекомендации */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
           🤖 Рекомендации

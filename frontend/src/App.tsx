@@ -38,21 +38,22 @@ export function App() {
         </div>
       )}
 
-      <main style={{ flex: 1, overflow: 'auto', padding: '16px 16px 0' }}>
+      {/* Кольца блокнота */}
+      <div className="binder-rings">
+        <img src="/ring.png" alt="" className="binder-ring" />
+        <img src="/ring.png" alt="" className="binder-ring" />
+        <img src="/ring.png" alt="" className="binder-ring" />
+      </div>
+
+      {/* Страница блокнота */}
+      <main className="binder-page">
         {activeTab === 'tasks' && <TasksPage />}
         {activeTab === 'timer' && <TimerPage />}
         {activeTab === 'analytics' && <AnalyticsPage />}
       </main>
 
-      <nav style={{
-        display: 'flex',
-        justifyContent: 'space-around',
-        alignItems: 'center',
-        padding: '12px 0 max(12px, env(safe-area-inset-bottom))',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(var(--blur))',
-        borderTop: '1px solid var(--glass-border)',
-      }}>
+      {/* Навигация */}
+      <nav className="binder-nav">
         {([
           { key: 'tasks' as Tab, label: 'Задачи' },
           { key: 'timer' as Tab, label: 'Таймер' },
@@ -61,13 +62,7 @@ export function App() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
-              fontSize: 14, fontWeight: activeTab === tab.key ? 600 : 400,
-              fontFamily: 'inherit', transition: 'color var(--transition)',
-            }}
+            className={`binder-nav-tab ${activeTab === tab.key ? 'active' : ''}`}
           >
             {tab.label}
           </button>
