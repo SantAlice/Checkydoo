@@ -38,20 +38,34 @@ export function App() {
         </div>
       )}
 
-      {/* Кольца блокнота */}
-      <div className="binder-rings">
-        <img src="/ring.png" alt="" className="binder-ring" />
-        <img src="/ring.png" alt="" className="binder-ring" />
-        <img src="/ring.png" alt="" className="binder-ring" />
-        <img src="/ring.png" alt="" className="binder-ring" />
-      </div>
+      {/* Блокнот */}
+      <div className="binder-wrapper">
+        {/* Задний лист — уходит за верх экрана */}
+        <div className="binder-back-page" />
 
-      {/* Страница блокнота */}
-      <main className="binder-page">
-        {activeTab === 'tasks' && <TasksPage />}
-        {activeTab === 'timer' && <TimerPage />}
-        {activeTab === 'analytics' && <AnalyticsPage />}
-      </main>
+        {/* Кольца */}
+        <div className="binder-rings">
+          <img src="/ring.png" alt="" className="binder-ring" />
+          <img src="/ring.png" alt="" className="binder-ring" />
+          <img src="/ring.png" alt="" className="binder-ring" />
+          <img src="/ring.png" alt="" className="binder-ring" />
+        </div>
+
+        {/* Передняя страница с дырками */}
+        <div className="binder-page-container">
+          <div className="binder-holes">
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+          </div>
+          <main className="binder-page">
+            {activeTab === 'tasks' && <TasksPage />}
+            {activeTab === 'timer' && <TimerPage />}
+            {activeTab === 'analytics' && <AnalyticsPage />}
+          </main>
+        </div>
+      </div>
 
       {/* Навигация */}
       <nav className="binder-nav">
