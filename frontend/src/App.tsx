@@ -40,15 +40,22 @@ export function App() {
 
       {/* Блокнот */}
       <div className="binder-wrapper">
-        {/* Задний лист — уходит за верх экрана */}
-        <div className="binder-back-page" />
-
         {/* Кольца */}
         <div className="binder-rings">
           <img src="/ring.png" alt="" className="binder-ring" />
           <img src="/ring.png" alt="" className="binder-ring" />
           <img src="/ring.png" alt="" className="binder-ring" />
           <img src="/ring.png" alt="" className="binder-ring" />
+        </div>
+
+        {/* Задний лист — полоска с дырками */}
+        <div className="binder-back-page">
+          <div className="binder-holes">
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+            <div className="binder-hole" />
+          </div>
         </div>
 
         {/* Передняя страница с дырками */}
