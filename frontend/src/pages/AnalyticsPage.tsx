@@ -149,12 +149,20 @@ export function AnalyticsPage() {
         </div>
       </div>
 
+      <div className="ring-connector">
+        <img src="/ring.png" alt="" />
+      </div>
+
       {/* Распределение времени */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
           Баланс времени
         </h3>
         <PieChart data={analytics.timeDistribution} />
+      </div>
+
+      <div className="ring-connector">
+        <img src="/ring.png" alt="" />
       </div>
 
       {/* Недельный тренд */}
@@ -167,6 +175,10 @@ export function AnalyticsPage() {
           <span>🟢 Выполнено</span>
         </div>
         <BarChart data={analytics.weeklyTrend} />
+      </div>
+
+      <div className="ring-connector">
+        <img src="/ring.png" alt="" />
       </div>
 
       {/* Просрочки */}
@@ -205,6 +217,10 @@ export function AnalyticsPage() {
           )}
         </div>
       )}
+
+      <div className="ring-connector">
+        <img src="/ring.png" alt="" />
+      </div>
 
       {/* ИИ-рекомендации */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>

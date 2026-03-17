@@ -271,3 +271,23 @@ body::before {
 .checkbox:hover {
   border-color: var(--accent-green);
 }
+
+/* Кольцо-соединитель между панелями */
+.ring-connector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 36px;
+  margin: -8px 0;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.ring-connector img {
+  height: 44px;
+  width: 44px;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}

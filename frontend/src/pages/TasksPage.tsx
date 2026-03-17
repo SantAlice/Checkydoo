@@ -458,17 +458,23 @@ export function TasksPage() {
         </button>
       </div>
 
-      {categories.map(cat => (
-        <CategorySection
-          key={cat.id}
-          category={cat}
-          tasks={tasks.filter(t => t.categoryId === cat.id)}
-          onAddTask={(categoryId) => setAddingTaskFor({ categoryId })}
-          onToggleTask={handleToggleTask}
-          onDeleteTask={handleDeleteTask}
-          onEditCategory={(c) => setEditingCategory(c)}
-          onDeleteCategory={handleDeleteCategory}
-        />
+      {categories.map((cat, index) => (
+        <div key={cat.id}>
+          {index > 0 && (
+            <div className="ring-connector">
+              <img src="/ring.png" alt="" />
+            </div>
+          )}
+          <CategorySection
+            category={cat}
+            tasks={tasks.filter(t => t.categoryId === cat.id)}
+            onAddTask={(categoryId) => setAddingTaskFor({ categoryId })}
+            onToggleTask={handleToggleTask}
+            onDeleteTask={handleDeleteTask}
+            onEditCategory={(c) => setEditingCategory(c)}
+            onDeleteCategory={handleDeleteCategory}
+          />
+        </div>
       ))}
 
       {categories.length === 0 && (
