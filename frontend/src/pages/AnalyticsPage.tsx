@@ -41,7 +41,7 @@ function PieChart({ data }: { data: Analytics['timeDistribution'] }) {
               key={i}
               d={`M 0 0 L ${x1} ${y1} A 1 1 0 ${large} 1 ${x2} ${y2} Z`}
               fill={TYPE_COLORS[item.type] || TYPE_COLORS.CUSTOM}
-              stroke="var(--paper-bg)"
+              stroke="var(--bg-dark)"
               strokeWidth="0.02"
             />
           );
@@ -138,7 +138,7 @@ export function AnalyticsPage() {
           {analytics.completionRate}%
         </div>
         <div style={{
-          height: 6, background: 'rgba(0,0,0,0.06)', borderRadius: 3,
+          height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3,
           marginTop: 12, overflow: 'hidden',
         }}>
           <div style={{
@@ -185,7 +185,7 @@ export function AnalyticsPage() {
             <div key={i} style={{
               display: 'flex', justifyContent: 'space-between',
               fontSize: 14, padding: '4px 0',
-              borderBottom: '1px solid rgba(200,185,154,0.15)',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
             }}>
               <span>{cat.name}</span>
               <span style={{ fontWeight: 600 }}>{cat.count}</span>
@@ -216,7 +216,7 @@ export function AnalyticsPage() {
             fontSize: 14, color: 'var(--text-secondary)',
             padding: '8px 0', lineHeight: 1.5,
             borderBottom: i < analytics.recommendations.length - 1
-              ? '1px solid rgba(200,185,154,0.15)' : 'none',
+              ? '1px solid rgba(255,255,255,0.08)' : 'none',
           }}>
             {rec}
           </div>

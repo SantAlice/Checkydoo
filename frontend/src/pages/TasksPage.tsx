@@ -40,7 +40,7 @@ function TaskItem({ task, onToggle, onDelete }: {
   return (
     <div className="fade-in" style={{
       display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0',
-      borderBottom: '1px solid rgba(160, 195, 225, 0.2)',
+      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
       opacity: isCompleted ? 0.5 : 1,
     }}>
       <div
@@ -168,7 +168,7 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
       {/* Прогресс-бар */}
       {tasks.length > 0 && (
         <div style={{
-          height: 3, background: 'rgba(0,0,0,0.06)', borderRadius: 2,
+          height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2,
           marginTop: 10, overflow: 'hidden',
         }}>
           <div style={{
@@ -256,7 +256,7 @@ function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
                 cursor: 'pointer',
                 border: priority === null ? '2px solid var(--text-secondary)' : '2px solid transparent',
                 padding: '4px 10px', borderRadius: 12,
-                background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)',
+                background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)',
               }}
             >
               Без приоритета
