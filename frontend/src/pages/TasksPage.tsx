@@ -40,7 +40,7 @@ function TaskItem({ task, onToggle, onDelete }: {
   return (
     <div className="fade-in" style={{
       display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0',
-      borderBottom: '1px solid rgba(200, 185, 154, 0.2)',
+      borderBottom: '1px solid rgba(160, 195, 225, 0.2)',
       opacity: isCompleted ? 0.5 : 1,
     }}>
       <div
@@ -61,9 +61,11 @@ function TaskItem({ task, onToggle, onDelete }: {
           {task.title}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span className={`priority-badge priority-${task.priority}`}>
-            {PRIORITY_LABELS[task.priority]}
-          </span>
+          {task.priority && (
+            <span className={`priority-badge priority-${task.priority}`}>
+              {PRIORITY_LABELS[task.priority]}
+            </span>
+          )}
           {task.deadline && (
             <span style={{
               fontSize: 12,
@@ -75,7 +77,7 @@ function TaskItem({ task, onToggle, onDelete }: {
           )}
           {task.totalTime > 0 && (
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              ⏱ {formatTime(task.totalTime)}
+              {formatTime(task.totalTime)}
             </span>
           )}
         </div>
@@ -88,35 +90,77 @@ function TaskItem({ task, onToggle, onDelete }: {
   );
 }
 
-function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTask }: {
+function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTask, onEditCategory, onDeleteCategory }: {
   category: Category;
   tasks: Task[];
   onAddTask: (categoryId: string) => void;
   onToggleTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onEditCategory: (category: Category) => void;
+  onDeleteCategory: (categoryId: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
   const completedCount = tasks.filter(t => t.status === 'COMPLETED').length;
 
   return (
     <div className="glass-card" style={{ padding: '16px 20px', marginBottom: 12 }}>
       <div
-        onClick={() => setExpanded(!expanded)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 10,
           userSelect: 'none',
         }}
       >
-        <span style={{ fontSize: 20 }}>{category.icon || '📁'}</span>
-        <span style={{ flex: 1, fontWeight: 600, fontSize: 16 }}>{category.name}</span>
+        <div
+          style={{ width: 12, height: 12, borderRadius: '50%', background: category.color, flexShrink: 0 }}
+        />
+        <span
+          onClick={() => setExpanded(!expanded)}
+          style={{ flex: 1, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
+        >
+          {category.name}
+        </span>
         <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           {completedCount}/{tasks.length}
         </span>
-        <span style={{
-          transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-          transition: 'transform var(--transition)', fontSize: 12,
-          color: 'var(--text-muted)',
-        }}>
+        <div style={{ position: 'relative' }}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowMenu(!showMenu)}
+            style={{ fontSize: 16, padding: '4px 8px', color: 'var(--text-muted)' }}
+          >
+            ⋯
+          </button>
+          {showMenu && (
+            <div className="glass-card" style={{
+              position: 'absolute', right: 0, top: '100%', zIndex: 50,
+              padding: 4, minWidth: 160, borderRadius: 'var(--radius-md)',
+            }}>
+              <button
+                className="btn btn-ghost"
+                onClick={() => { setShowMenu(false); onEditCategory(category); }}
+                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px' }}
+              >
+                Редактировать
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => { setShowMenu(false); onDeleteCategory(category.id); }}
+                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px', color: 'var(--accent-red)' }}
+              >
+                Удалить
+              </button>
+            </div>
+          )}
+        </div>
+        <span
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+            transition: 'transform var(--transition)', fontSize: 12,
+            color: 'var(--text-muted)', cursor: 'pointer',
+          }}
+        >
           ▼
         </span>
       </div>
@@ -161,14 +205,15 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
   );
 }
 
-// Модальное окно добавления задачи
-function AddTaskModal({ categoryId, onClose, onSubmit }: {
+// Модальное окно добавления задачи — по центру экрана
+function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
   categoryId: string;
+  initialTitle?: string;
   onClose: () => void;
-  onSubmit: (data: { categoryId: string; title: string; priority: Priority; deadline?: string }) => void;
+  onSubmit: (data: { categoryId: string; title: string; priority?: Priority | null; deadline?: string }) => void;
 }) {
-  const [title, setTitle] = useState('');
-  const [priority, setPriority] = useState<Priority>('MEDIUM');
+  const [title, setTitle] = useState(initialTitle || '');
+  const [priority, setPriority] = useState<Priority | null>(null);
   const [deadline, setDeadline] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -177,7 +222,7 @@ function AddTaskModal({ categoryId, onClose, onSubmit }: {
     onSubmit({
       categoryId,
       title: title.trim(),
-      priority,
+      priority: priority || undefined,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
     });
   };
@@ -185,12 +230,12 @@ function AddTaskModal({ categoryId, onClose, onSubmit }: {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 100, backdropFilter: 'blur(4px)',
     }} onClick={onClose}>
       <div
         className="glass-card slide-up"
-        style={{ width: '100%', maxWidth: 500, padding: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+        style={{ width: '90%', maxWidth: 460, padding: 24 }}
         onClick={e => e.stopPropagation()}
       >
         <h3 style={{ marginBottom: 16, fontSize: 18 }}>Новая задача</h3>
@@ -202,7 +247,20 @@ function AddTaskModal({ categoryId, onClose, onSubmit }: {
             onChange={e => setTitle(e.target.value)}
             autoFocus
           />
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setPriority(null)}
+              className="priority-badge"
+              style={{
+                cursor: 'pointer',
+                border: priority === null ? '2px solid var(--text-secondary)' : '2px solid transparent',
+                padding: '4px 10px', borderRadius: 12,
+                background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)',
+              }}
+            >
+              Без приоритета
+            </button>
             {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as Priority[]).map(p => (
               <button
                 key={p}
@@ -238,42 +296,37 @@ function AddTaskModal({ categoryId, onClose, onSubmit }: {
   );
 }
 
-// Модалка создания категории
-function AddCategoryModal({ onClose, onSubmit }: {
+// Модалка создания/редактирования категории — без иконок и без выбора типа
+function CategoryModal({ category, onClose, onSubmit }: {
+  category?: Category;
   onClose: () => void;
-  onSubmit: (data: { name: string; icon?: string; color?: string; type?: string }) => void;
+  onSubmit: (data: { name: string; color?: string }) => void;
 }) {
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState('');
-  const [color, setColor] = useState('#6B9E78');
-  const [type, setType] = useState('CUSTOM');
-
-  const types = [
-    { value: 'WORK', label: 'Работа' },
-    { value: 'PERSONAL', label: 'Личное' },
-    { value: 'HOBBY', label: 'Хобби' },
-    { value: 'REST', label: 'Отдых' },
-    { value: 'CUSTOM', label: 'Другое' },
-  ];
+  const [name, setName] = useState(category?.name || '');
+  const [color, setColor] = useState(category?.color || '#4A90D9');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    onSubmit({ name: name.trim(), icon: icon || undefined, color, type });
+    onSubmit({ name: name.trim(), color });
   };
+
+  const isEditing = !!category;
 
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 100, backdropFilter: 'blur(4px)',
     }} onClick={onClose}>
       <div
         className="glass-card slide-up"
-        style={{ width: '100%', maxWidth: 500, padding: 24, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+        style={{ width: '90%', maxWidth: 460, padding: 24 }}
         onClick={e => e.stopPropagation()}
       >
-        <h3 style={{ marginBottom: 16, fontSize: 18 }}>Новая категория</h3>
+        <h3 style={{ marginBottom: 16, fontSize: 18 }}>
+          {isEditing ? 'Редактировать категорию' : 'Новая категория'}
+        </h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
             className="glass-input"
@@ -282,15 +335,8 @@ function AddCategoryModal({ onClose, onSubmit }: {
             onChange={e => setName(e.target.value)}
             autoFocus
           />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              className="glass-input"
-              placeholder="Иконка (эмодзи)"
-              value={icon}
-              onChange={e => setIcon(e.target.value)}
-              style={{ width: 80, textAlign: 'center' }}
-              maxLength={4}
-            />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Цвет:</span>
             <input
               className="glass-input"
               type="color"
@@ -298,23 +344,13 @@ function AddCategoryModal({ onClose, onSubmit }: {
               onChange={e => setColor(e.target.value)}
               style={{ width: 50, padding: 4, cursor: 'pointer' }}
             />
-            <select
-              className="glass-input"
-              value={type}
-              onChange={e => setType(e.target.value)}
-              style={{ flex: 1 }}
-            >
-              {types.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
               Отмена
             </button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-              Создать
+              {isEditing ? 'Сохранить' : 'Создать'}
             </button>
           </div>
         </form>
@@ -325,26 +361,26 @@ function AddCategoryModal({ onClose, onSubmit }: {
 
 export function TasksPage() {
   const {
-    categories, loadCategories, addCategory,
+    categories, loadCategories, addCategory, updateCategory, deleteCategory,
     tasks, loadTasks, addTask, updateTask, deleteTask,
     user, logout,
   } = useStore();
 
+  const [addingTaskFor, setAddingTaskFor] = useState<{ categoryId: string; title?: string } | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [quickTask, setQuickTask] = useState('');
-  const [addingTaskFor, setAddingTaskFor] = useState<string | null>(null);
-  const [showAddCategory, setShowAddCategory] = useState(false);
 
   useEffect(() => {
     loadCategories();
     loadTasks();
   }, [loadCategories, loadTasks]);
 
-  const handleQuickAdd = async (e: React.FormEvent) => {
+  // Быстрое добавление — открывает модалку с предзаполненным названием
+  const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickTask.trim() || categories.length === 0) return;
-    await addTask({ categoryId: categories[0].id, title: quickTask.trim() });
-    setQuickTask('');
-    await loadTasks();
+    setAddingTaskFor({ categoryId: categories[0].id, title: quickTask.trim() });
   };
 
   const handleToggleTask = async (task: Task) => {
@@ -360,13 +396,27 @@ export function TasksPage() {
   const handleAddTask = async (data: any) => {
     await addTask(data);
     setAddingTaskFor(null);
+    setQuickTask('');
     await loadTasks();
   };
 
-  const handleAddCategory = async (data: any) => {
-    await addCategory(data);
-    setShowAddCategory(false);
+  const handleSaveCategory = async (data: { name: string; color?: string }) => {
+    if (editingCategory) {
+      await updateCategory(editingCategory.id, data);
+      setEditingCategory(null);
+    } else {
+      await addCategory(data);
+      setShowCategoryModal(false);
+    }
     await loadCategories();
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (confirm('Удалить категорию и все её задачи?')) {
+      await deleteCategory(categoryId);
+      await loadCategories();
+      await loadTasks();
+    }
   };
 
   return (
@@ -378,7 +428,7 @@ export function TasksPage() {
       }}>
         <div>
           <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Привет,</span>
-          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{user?.displayName} 👋</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{user?.displayName}</h2>
         </div>
         <button className="btn btn-ghost" onClick={logout} style={{ fontSize: 13 }}>
           Выйти
@@ -403,8 +453,8 @@ export function TasksPage() {
         marginBottom: 12,
       }}>
         <h3 style={{ fontSize: 17, fontWeight: 600 }}>Списки дел</h3>
-        <button className="btn btn-ghost" onClick={() => setShowAddCategory(true)} style={{ fontSize: 18 }}>
-          📁+
+        <button className="btn btn-ghost" onClick={() => setShowCategoryModal(true)} style={{ fontSize: 14 }}>
+          + Категория
         </button>
       </div>
 
@@ -413,16 +463,18 @@ export function TasksPage() {
           key={cat.id}
           category={cat}
           tasks={tasks.filter(t => t.categoryId === cat.id)}
-          onAddTask={setAddingTaskFor}
+          onAddTask={(categoryId) => setAddingTaskFor({ categoryId })}
           onToggleTask={handleToggleTask}
           onDeleteTask={handleDeleteTask}
+          onEditCategory={(c) => setEditingCategory(c)}
+          onDeleteCategory={handleDeleteCategory}
         />
       ))}
 
       {categories.length === 0 && (
         <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
           <p style={{ color: 'var(--text-muted)', marginBottom: 12 }}>Нет категорий</p>
-          <button className="btn btn-primary" onClick={() => setShowAddCategory(true)}>
+          <button className="btn btn-primary" onClick={() => setShowCategoryModal(true)}>
             Создать первую категорию
           </button>
         </div>
@@ -431,15 +483,17 @@ export function TasksPage() {
       {/* Модалки */}
       {addingTaskFor && (
         <AddTaskModal
-          categoryId={addingTaskFor}
+          categoryId={addingTaskFor.categoryId}
+          initialTitle={addingTaskFor.title}
           onClose={() => setAddingTaskFor(null)}
           onSubmit={handleAddTask}
         />
       )}
-      {showAddCategory && (
-        <AddCategoryModal
-          onClose={() => setShowAddCategory(false)}
-          onSubmit={handleAddCategory}
+      {(showCategoryModal || editingCategory) && (
+        <CategoryModal
+          category={editingCategory || undefined}
+          onClose={() => { setShowCategoryModal(false); setEditingCategory(null); }}
+          onSubmit={handleSaveCategory}
         />
       )}
     </div>

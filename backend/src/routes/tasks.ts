@@ -11,7 +11,7 @@ const createSchema = z.object({
   categoryId: z.string().uuid(),
   title: z.string().min(1).max(500),
   description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().nullable(),
   deadline: z.string().datetime().optional().transform(v => v ? new Date(v) : undefined),
 });
 

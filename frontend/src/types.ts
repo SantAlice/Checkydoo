@@ -24,7 +24,7 @@ export interface Task {
   categoryId: string;
   title: string;
   description?: string;
-  priority: Priority;
+  priority: Priority | null;
   status: TaskStatus;
   deadline?: string;
   completedAt?: string;

@@ -54,9 +54,9 @@ export function App() {
         borderTop: '1px solid var(--glass-border)',
       }}>
         {([
-          { key: 'tasks' as Tab, icon: '🏠', label: 'Задачи' },
-          { key: 'timer' as Tab, icon: '⏱', label: 'Таймер' },
-          { key: 'analytics' as Tab, icon: '📊', label: 'Аналитика' },
+          { key: 'tasks' as Tab, label: 'Задачи' },
+          { key: 'timer' as Tab, label: 'Таймер' },
+          { key: 'analytics' as Tab, label: 'Аналитика' },
         ]).map(tab => (
           <button
             key={tab.key}
@@ -65,11 +65,10 @@ export function App() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               background: 'none', border: 'none', cursor: 'pointer',
               color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-muted)',
-              fontSize: 12, fontWeight: activeTab === tab.key ? 600 : 400,
+              fontSize: 14, fontWeight: activeTab === tab.key ? 600 : 400,
               fontFamily: 'inherit', transition: 'color var(--transition)',
             }}
           >
-            <span style={{ fontSize: 22 }}>{tab.icon}</span>
             {tab.label}
           </button>
         ))}

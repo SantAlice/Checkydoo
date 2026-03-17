@@ -85,7 +85,7 @@ export function TimerPage() {
             <option value="">Без привязки к задаче</option>
             {incompleteTasks.map(t => (
               <option key={t.id} value={t.id}>
-                {t.category?.icon} {t.title}
+                {t.title}
               </option>
             ))}
           </select>

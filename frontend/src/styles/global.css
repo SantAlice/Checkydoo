@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Палитра — мятые листы в клетку */
-  --paper-bg: #f5f0e8;
-  --paper-warm: #ebe5d9;
-  --paper-grid: #c9b99a33;
-  --paper-grid-strong: #c9b99a55;
-  --glass-bg: rgba(245, 240, 232, 0.65);
-  --glass-border: rgba(200, 185, 154, 0.35);
-  --glass-shadow: rgba(139, 119, 80, 0.08);
+  /* Палитра — голубая бумага */
+  --paper-bg: #dce8f0;
+  --paper-warm: #d0dfea;
+  --paper-grid: rgba(160, 190, 210, 0.25);
+  --paper-grid-strong: rgba(140, 175, 200, 0.35);
+  --glass-bg: rgba(220, 235, 248, 0.55);
+  --glass-border: rgba(160, 195, 225, 0.4);
+  --glass-shadow: rgba(80, 120, 160, 0.1);
 
-  --text-primary: #3d3529;
-  --text-secondary: #7a6f5f;
-  --text-muted: #a89e8c;
+  --text-primary: #1e2d3d;
+  --text-secondary: #4a6178;
+  --text-muted: #7a94a8;
 
   --accent-green: #6B9E78;
   --accent-green-light: #8db89a;
@@ -66,17 +66,17 @@ body {
     100px 100px;
 }
 
-/* Эффект мятой бумаги — через наложение */
+/* Эффект текстуры бумаги — через наложение */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(0,0,0,0.02) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(0,0,0,0.03) 0%, transparent 40%),
-    radial-gradient(ellipse at 40% 80%, rgba(0,0,0,0.02) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 60%, rgba(255,255,255,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 10% 90%, rgba(0,0,0,0.015) 0%, transparent 40%);
+    radial-gradient(ellipse at 20% 50%, rgba(100,160,210,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(80,140,200,0.07) 0%, transparent 40%),
+    radial-gradient(ellipse at 40% 80%, rgba(90,150,200,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 60%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 90%, rgba(80,130,180,0.04) 0%, transparent 40%);
   pointer-events: none;
   z-index: 0;
 }
@@ -88,21 +88,25 @@ body::before {
 
 /* Стеклянная карточка */
 .glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  border: 1px solid var(--glass-border);
+  background: rgba(225, 240, 252, 0.45);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(200, 225, 245, 0.5);
   border-radius: var(--radius-lg);
   box-shadow:
-    0 4px 24px var(--glass-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 4px 24px rgba(80, 120, 160, 0.08),
+    0 1px 3px rgba(80, 120, 160, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
   transition: box-shadow var(--transition), transform var(--transition);
 }
 
 .glass-card:hover {
   box-shadow:
-    0 8px 32px rgba(139, 119, 80, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    0 8px 32px rgba(80, 120, 160, 0.14),
+    0 2px 6px rgba(80, 120, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Стеклянный инпут */
@@ -121,8 +125,8 @@ body::before {
 }
 
 .glass-input:focus {
-  border-color: var(--accent-green);
-  box-shadow: 0 0 0 3px rgba(107, 158, 120, 0.15);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
 }
 
 .glass-input::placeholder {
