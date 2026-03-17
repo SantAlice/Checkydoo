@@ -43,6 +43,7 @@ export function App() {
         <img src="/ring.png" alt="" className="binder-ring" />
         <img src="/ring.png" alt="" className="binder-ring" />
         <img src="/ring.png" alt="" className="binder-ring" />
+        <img src="/ring.png" alt="" className="binder-ring" />
       </div>
 
       {/* Страница блокнота */}
