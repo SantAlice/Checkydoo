@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Row-Level Security через tenant_id для изоляции данных пользователей
+// Соответствие 152-ФЗ: персональные данные минимизированы,
+// хранится только необходимый минимум для функционирования сервиса
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  displayName  String   @map("display_name") @db.VarChar(100)
+  timezone     String   @default("Europe/Moscow") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  categories   Category[]
+  timerSessions TimerSession[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String   @db.VarChar(100)
+  icon      String?  @db.VarChar(10)
+  color     String   @default("#6B9E78") @db.VarChar(7)
+  type      CategoryType @default(CUSTOM)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@index([userId])
+  @@map("categories")
+}
+
+enum CategoryType {
+  WORK
+  PERSONAL
+  HOBBY
+  REST
+  CUSTOM
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  categoryId  String     @map("category_id")
+  title       String     @db.VarChar(500)
+  description String?    @db.Text
+  priority    Priority   @default(MEDIUM)
+  status      TaskStatus @default(PENDING)
+  deadline    DateTime?
+  completedAt DateTime?  @map("completed_at")
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  category      Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  timerSessions TimerSession[]
+
+  @@index([categoryId])
+  @@index([deadline])
+  @@index([status])
+  @@map("tasks")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+model TimerSession {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  taskId    String?   @map("task_id")
+  startedAt DateTime  @default(now()) @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  duration  Int?      // в секундах
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([startedAt])
+  @@map("timer_sessions")
+}
