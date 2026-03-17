@@ -307,7 +307,7 @@ body {
 .binder-holes {
   display: flex;
   justify-content: center;
-  gap: 44px;
+  gap: 64px;
   position: relative;
   z-index: 12;
   height: 0;
