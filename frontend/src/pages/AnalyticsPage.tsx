@@ -4,8 +4,8 @@ import type { Analytics } from '../types';
 
 const TYPE_COLORS: Record<string, string> = {
   WORK: '#4A90D9',
-  PERSONAL: '#6B9E78',
-  HOBBY: '#D4A574',
+  PERSONAL: '#AAD7CD',
+  HOBBY: '#E8C97A',
   REST: '#9B8EC4',
   CUSTOM: '#a89e8c',
 };
@@ -51,7 +51,7 @@ function PieChart({ data }: { data: Analytics['timeDistribution'] }) {
         {data.map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <div style={{
-              width: 12, height: 12, borderRadius: 3,
+              width: 10, height: 10, borderRadius: 3,
               background: TYPE_COLORS[item.type] || TYPE_COLORS.CUSTOM,
             }} />
             <span style={{ color: 'var(--text-secondary)' }}>
@@ -75,12 +75,12 @@ function BarChart({ data }: { data: Analytics['weeklyTrend'] }) {
         <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 80 }}>
             <div style={{
-              width: 14, background: 'var(--accent-blue)',
+              width: 14, background: 'var(--mint)',
               height: `${(week.created / maxVal) * 80}px`,
-              borderRadius: '3px 3px 0 0', opacity: 0.6,
+              borderRadius: '3px 3px 0 0', opacity: 0.4,
             }} />
             <div style={{
-              width: 14, background: 'var(--accent-green)',
+              width: 14, background: 'var(--mint)',
               height: `${(week.completed / maxVal) * 80}px`,
               borderRadius: '3px 3px 0 0',
             }} />
@@ -116,7 +116,7 @@ export function AnalyticsPage() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: 20,
       }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700 }}>Аналитика</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ivory)' }}>Аналитика</h2>
         <select
           className="glass-input"
           value={period}
@@ -134,22 +134,22 @@ export function AnalyticsPage() {
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
           Выполнение задач
         </div>
-        <div style={{ fontSize: 44, fontWeight: 700, color: 'var(--accent-green)' }}>
+        <div style={{ fontSize: 44, fontWeight: 700, color: 'var(--mint)' }}>
           {analytics.completionRate}%
         </div>
         <div style={{
-          height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3,
+          height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2,
           marginTop: 12, overflow: 'hidden',
         }}>
           <div style={{
             height: '100%', width: `${analytics.completionRate}%`,
-            background: 'var(--accent-green)', borderRadius: 3,
+            background: 'var(--mint)', borderRadius: 2,
             transition: 'width 0.5s ease',
           }} />
         </div>
       </div>
 
-{/* Распределение времени */}
+      {/* Time distribution */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
           Баланс времени
@@ -157,25 +157,31 @@ export function AnalyticsPage() {
         <PieChart data={analytics.timeDistribution} />
       </div>
 
-{/* Недельный тренд */}
+      {/* Weekly trend */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
           Динамика задач
         </h3>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-          <span>🔵 Создано</span>
-          <span>🟢 Выполнено</span>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--mint)', opacity: 0.4, display: 'inline-block' }} />
+            Создано
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--mint)', display: 'inline-block' }} />
+            Выполнено
+          </span>
         </div>
         <BarChart data={analytics.weeklyTrend} />
       </div>
 
-{/* Просрочки */}
+      {/* Overdue */}
       {analytics.overdueAnalysis.totalOverdue > 0 && (
         <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
           <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
             Анализ просрочек
           </h3>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent-red)', marginBottom: 8 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--scarlet)', marginBottom: 8 }}>
             {analytics.overdueAnalysis.totalOverdue}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
@@ -185,7 +191,7 @@ export function AnalyticsPage() {
             <div key={i} style={{
               display: 'flex', justifyContent: 'space-between',
               fontSize: 14, padding: '4px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              borderBottom: '1px solid var(--glass-border)',
             }}>
               <span>{cat.name}</span>
               <span style={{ fontWeight: 600 }}>{cat.count}</span>
@@ -198,7 +204,7 @@ export function AnalyticsPage() {
                   fontSize: 13, color: 'var(--text-secondary)',
                   padding: '4px 0', lineHeight: 1.4,
                 }}>
-                  💡 {p}
+                  {p}
                 </div>
               ))}
             </div>
@@ -206,17 +212,17 @@ export function AnalyticsPage() {
         </div>
       )}
 
-{/* ИИ-рекомендации */}
+      {/* Recommendations */}
       <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-          🤖 Рекомендации
+          Рекомендации
         </h3>
         {analytics.recommendations.map((rec, i) => (
           <div key={i} style={{
             fontSize: 14, color: 'var(--text-secondary)',
             padding: '8px 0', lineHeight: 1.5,
             borderBottom: i < analytics.recommendations.length - 1
-              ? '1px solid rgba(255,255,255,0.08)' : 'none',
+              ? '1px solid var(--glass-border)' : 'none',
           }}>
             {rec}
           </div>

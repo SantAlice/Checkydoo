@@ -24,7 +24,6 @@ export function TimerPage() {
     loadTasks();
   }, [loadActiveTimer, loadTasks]);
 
-  // Тикание таймера
   useEffect(() => {
     if (activeTimer) {
       intervalRef.current = setInterval(() => {
@@ -50,18 +49,21 @@ export function TimerPage() {
 
   return (
     <div style={{ maxWidth: 500, margin: '0 auto', paddingBottom: 16, textAlign: 'center' }}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 32 }}>Таймер</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 32, color: 'var(--ivory)' }}>Таймер</h2>
 
-      {/* Циферблат */}
-      <div className="glass-card" style={{
-        width: 260, height: 260, margin: '0 auto 32px',
+      {/* Timer circle */}
+      <div style={{
+        width: 240, height: 240, margin: '0 auto 32px',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '50%',
+        background: 'rgba(255, 255, 255, 0.04)',
+        border: `2px solid ${activeTimer ? 'var(--mint)' : 'var(--glass-border)'}`,
+        transition: 'border-color 0.3s ease',
       }}>
         <div>
           <div style={{
-            fontSize: 44, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-            color: activeTimer ? 'var(--accent-green)' : 'var(--text-primary)',
+            fontSize: 42, fontWeight: 700, fontVariantNumeric: 'tabular-nums',
+            color: activeTimer ? 'var(--mint)' : 'var(--ivory)',
           }}>
             {formatTimer(timerElapsed)}
           </div>
@@ -73,7 +75,7 @@ export function TimerPage() {
         </div>
       </div>
 
-      {/* Выбор задачи */}
+      {/* Task select */}
       {!activeTimer && (
         <div style={{ marginBottom: 20 }}>
           <select
@@ -92,32 +94,25 @@ export function TimerPage() {
         </div>
       )}
 
-      {/* Кнопка старт/стоп */}
+      {/* Start/Stop */}
       {activeTimer ? (
         <button
-          className="btn"
+          className="btn btn-scarlet"
           onClick={handleStop}
-          style={{
-            background: 'var(--accent-red)', color: 'white',
-            padding: '16px 48px', fontSize: 16, borderRadius: 'var(--radius-xl)',
-            boxShadow: '0 4px 16px rgba(212, 107, 107, 0.3)',
-          }}
+          style={{ padding: '16px 48px', fontSize: 16, borderRadius: 'var(--radius-xl)' }}
         >
-          ⏹ Остановить
+          Остановить
         </button>
       ) : (
         <button
           className="btn btn-primary"
           onClick={handleStart}
-          style={{
-            padding: '16px 48px', fontSize: 16, borderRadius: 'var(--radius-xl)',
-          }}
+          style={{ padding: '16px 48px', fontSize: 16, borderRadius: 'var(--radius-xl)' }}
         >
-          ▶ Начать
+          Начать
         </button>
       )}
 
-      {/* Подсказка */}
       <p style={{
         marginTop: 24, fontSize: 13, color: 'var(--text-muted)',
         lineHeight: 1.5,

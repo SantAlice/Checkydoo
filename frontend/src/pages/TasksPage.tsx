@@ -40,7 +40,7 @@ function TaskItem({ task, onToggle, onDelete }: {
   return (
     <div className="fade-in" style={{
       display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+      borderBottom: '1px solid var(--glass-border)',
       opacity: isCompleted ? 0.5 : 1,
     }}>
       <div
@@ -69,7 +69,7 @@ function TaskItem({ task, onToggle, onDelete }: {
           {task.deadline && (
             <span style={{
               fontSize: 12,
-              color: isOverdue ? 'var(--accent-red)' : 'var(--text-secondary)',
+              color: isOverdue ? 'var(--scarlet)' : 'var(--text-secondary)',
               fontWeight: isOverdue ? 600 : 400,
             }}>
               {formatDeadline(task.deadline)}
@@ -105,15 +105,8 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
 
   return (
     <div className="glass-card" style={{ padding: '16px 20px', marginBottom: 12 }}>
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          userSelect: 'none',
-        }}
-      >
-        <div
-          style={{ width: 12, height: 12, borderRadius: '50%', background: category.color, flexShrink: 0 }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, userSelect: 'none' }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: category.color, flexShrink: 0 }} />
         <span
           onClick={() => setExpanded(!expanded)}
           style={{ flex: 1, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
@@ -129,12 +122,13 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
             onClick={() => setShowMenu(!showMenu)}
             style={{ fontSize: 16, padding: '4px 8px', color: 'var(--text-muted)' }}
           >
-            ⋯
+            ...
           </button>
           {showMenu && (
-            <div className="glass-card" style={{
+            <div style={{
               position: 'absolute', right: 0, top: '100%', zIndex: 50,
               padding: 4, minWidth: 160, borderRadius: 'var(--radius-md)',
+              background: '#1A1A1A', border: '1px solid var(--glass-border)',
             }}>
               <button
                 className="btn btn-ghost"
@@ -146,7 +140,7 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
               <button
                 className="btn btn-ghost"
                 onClick={() => { setShowMenu(false); onDeleteCategory(category.id); }}
-                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px', color: 'var(--accent-red)' }}
+                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px', color: 'var(--scarlet)' }}
               >
                 Удалить
               </button>
@@ -165,10 +159,9 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
         </span>
       </div>
 
-      {/* Прогресс-бар */}
       {tasks.length > 0 && (
         <div style={{
-          height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2,
+          height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2,
           marginTop: 10, overflow: 'hidden',
         }}>
           <div style={{
@@ -205,7 +198,6 @@ function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTas
   );
 }
 
-// Модальное окно добавления задачи — по центру экрана
 function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
   categoryId: string;
   initialTitle?: string;
@@ -228,16 +220,8 @@ function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 100, backdropFilter: 'blur(4px)',
-    }} onClick={onClose}>
-      <div
-        className="glass-card slide-up"
-        style={{ width: '90%', maxWidth: 460, padding: 24 }}
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card slide-up" onClick={e => e.stopPropagation()}>
         <h3 style={{ marginBottom: 16, fontSize: 18 }}>Новая задача</h3>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
@@ -256,7 +240,7 @@ function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
                 cursor: 'pointer',
                 border: priority === null ? '2px solid var(--text-secondary)' : '2px solid transparent',
                 padding: '4px 10px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)',
+                background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)',
               }}
             >
               Без приоритета
@@ -296,14 +280,13 @@ function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
   );
 }
 
-// Модалка создания/редактирования категории — без иконок и без выбора типа
 function CategoryModal({ category, onClose, onSubmit }: {
   category?: Category;
   onClose: () => void;
   onSubmit: (data: { name: string; color?: string }) => void;
 }) {
   const [name, setName] = useState(category?.name || '');
-  const [color, setColor] = useState(category?.color || '#4A90D9');
+  const [color, setColor] = useState(category?.color || '#AAD7CD');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,16 +297,8 @@ function CategoryModal({ category, onClose, onSubmit }: {
   const isEditing = !!category;
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 100, backdropFilter: 'blur(4px)',
-    }} onClick={onClose}>
-      <div
-        className="glass-card slide-up"
-        style={{ width: '90%', maxWidth: 460, padding: 24 }}
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card slide-up" onClick={e => e.stopPropagation()}>
         <h3 style={{ marginBottom: 16, fontSize: 18 }}>
           {isEditing ? 'Редактировать категорию' : 'Новая категория'}
         </h3>
@@ -376,7 +351,6 @@ export function TasksPage() {
     loadTasks();
   }, [loadCategories, loadTasks]);
 
-  // Быстрое добавление — открывает модалку с предзаполненным названием
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickTask.trim() || categories.length === 0) return;
@@ -421,22 +395,22 @@ export function TasksPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 16 }}>
-      {/* Шапка */}
+      {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
       }}>
         <div>
           <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Привет,</span>
-          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{user?.displayName}</h2>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ivory)' }}>{user?.displayName}</h2>
         </div>
-        <button className="btn btn-ghost" onClick={logout} style={{ fontSize: 13 }}>
+        <button className="btn btn-ghost" onClick={logout} style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           Выйти
         </button>
       </div>
 
-      {/* Быстрое добавление */}
-      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      {/* Quick add */}
+      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           className="glass-input"
           placeholder="Добавить новую задачу..."
@@ -447,13 +421,13 @@ export function TasksPage() {
         <button type="submit" className="btn btn-icon">+</button>
       </form>
 
-      {/* Списки дел */}
+      {/* Categories header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: 12,
       }}>
         <h3 style={{ fontSize: 17, fontWeight: 600 }}>Списки дел</h3>
-        <button className="btn btn-ghost" onClick={() => setShowCategoryModal(true)} style={{ fontSize: 14 }}>
+        <button className="btn btn-ghost" onClick={() => setShowCategoryModal(true)} style={{ fontSize: 14, color: 'var(--mint)' }}>
           + Категория
         </button>
       </div>
@@ -480,7 +454,6 @@ export function TasksPage() {
         </div>
       )}
 
-      {/* Модалки */}
       {addingTaskFor && (
         <AddTaskModal
           categoryId={addingTaskFor.categoryId}

@@ -28,12 +28,18 @@ export function AuthPage() {
       height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 16,
     }}>
-      <div className="glass-card slide-up" style={{
+      <div className="slide-up" style={{
         width: '100%', maxWidth: 400, padding: 32,
+        background: 'rgba(255, 255, 255, 0.04)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-lg)',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>✓</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>
+          <div style={{
+            fontSize: 40, marginBottom: 8,
+            color: 'var(--mint)',
+          }}>✓</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ivory)' }}>
             Checkydoo
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
@@ -71,7 +77,7 @@ export function AuthPage() {
           />
 
           {localError && (
-            <div style={{ color: 'var(--accent-red)', fontSize: 13, textAlign: 'center' }}>
+            <div style={{ color: 'var(--scarlet)', fontSize: 13, textAlign: 'center' }}>
               {localError}
             </div>
           )}
@@ -87,7 +93,7 @@ export function AuthPage() {
           onClick={() => { setIsRegister(!isRegister); setLocalError(''); }}
           style={{
             display: 'block', width: '100%', marginTop: 16, textAlign: 'center',
-            background: 'none', border: 'none', color: 'var(--accent-green)',
+            background: 'none', border: 'none', color: 'var(--mint)',
             cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
           }}
         >

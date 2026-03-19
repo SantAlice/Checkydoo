@@ -20,15 +20,15 @@ export function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="app-layout">
       {error && (
         <div className="fade-in" style={{
           position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(212, 107, 107, 0.9)', color: 'white',
+          background: 'var(--scarlet)', color: 'white',
           padding: '10px 20px', borderRadius: 'var(--radius-md)',
-          backdropFilter: 'blur(8px)', zIndex: 1000,
+          zIndex: 1000,
           display: 'flex', alignItems: 'center', gap: 12,
-          fontSize: 14, boxShadow: '0 4px 16px rgba(212, 107, 107, 0.3)',
+          fontSize: 14, boxShadow: '0 4px 16px var(--scarlet-glow)',
         }}>
           {error}
           <button onClick={clearError} style={{
@@ -38,44 +38,13 @@ export function App() {
         </div>
       )}
 
-      {/* Блокнот */}
-      <div className="binder-wrapper">
-        {/* Кольца */}
-        <div className="binder-rings">
-          <img src="/ring.png" alt="" className="binder-ring" />
-          <img src="/ring.png" alt="" className="binder-ring" />
-          <img src="/ring.png" alt="" className="binder-ring" />
-          <img src="/ring.png" alt="" className="binder-ring" />
-        </div>
+      <main className="app-content">
+        {activeTab === 'tasks' && <TasksPage />}
+        {activeTab === 'timer' && <TimerPage />}
+        {activeTab === 'analytics' && <AnalyticsPage />}
+      </main>
 
-        {/* Задний лист — полоска с дырками */}
-        <div className="binder-back-page">
-          <div className="binder-holes">
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-          </div>
-        </div>
-
-        {/* Передняя страница с дырками */}
-        <div className="binder-page-container">
-          <div className="binder-holes">
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-            <div className="binder-hole" />
-          </div>
-          <main className="binder-page">
-            {activeTab === 'tasks' && <TasksPage />}
-            {activeTab === 'timer' && <TimerPage />}
-            {activeTab === 'analytics' && <AnalyticsPage />}
-          </main>
-        </div>
-      </div>
-
-      {/* Навигация */}
-      <nav className="binder-nav">
+      <nav className="bottom-nav">
         {([
           { key: 'tasks' as Tab, label: 'Задачи' },
           { key: 'timer' as Tab, label: 'Таймер' },
@@ -84,7 +53,7 @@ export function App() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`binder-nav-tab ${activeTab === tab.key ? 'active' : ''}`}
+            className={`nav-tab ${activeTab === tab.key ? 'active' : ''}`}
           >
             {tab.label}
           </button>
