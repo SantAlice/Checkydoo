@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../hooks/useStore';
-import type { Category, Task, Priority } from '../types';
+import type { Category, Task, Priority, ScheduleChange } from '../types';
 
 const PRIORITY_LABELS: Record<Priority, string> = {
   LOW: 'Низкий',
@@ -334,22 +334,161 @@ function CategoryModal({ category, onClose, onSubmit }: {
   );
 }
 
+function formatRelativeDay(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff === 0) return 'Сегодня';
+  if (diff === 1) return 'Завтра';
+  if (diff === 2) return 'Послезавтра';
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', weekday: 'short' });
+}
+
+function OptimizeModal({
+  step,
+  totalMinutes,
+  taskCount,
+  proposal,
+  loading,
+  onOptimize,
+  onApply,
+  onClose,
+}: {
+  step: 'input' | 'proposal';
+  totalMinutes: number;
+  taskCount: number;
+  proposal: { changes: ScheduleChange[]; keepTodayCount: number; movedCount: number } | null;
+  loading: boolean;
+  onOptimize: (preferences?: string) => void;
+  onApply: () => void;
+  onClose: () => void;
+}) {
+  const [preferences, setPreferences] = useState('');
+  const hours = Math.round(totalMinutes / 60);
+
+  if (step === 'input') {
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-card slide-up" onClick={e => e.stopPropagation()} style={{ maxHeight: '80vh', overflow: 'auto' }}>
+          <h3 style={{ marginBottom: 8, fontSize: 18 }}>Оптимизировать расписание</h3>
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+            У вас <strong style={{ color: 'var(--scarlet)' }}>{taskCount} задач</strong> на сегодня
+            (~{hours}ч). Это больше 12 часов — перегрузка.
+            ИИ перенесёт менее приоритетные задачи на свободные слоты ближайших дней.
+          </p>
+          <textarea
+            className="glass-input"
+            placeholder="Ваши пожелания (необязательно)... Например: «не трогай рабочие задачи» или «перенеси всё кроме срочных»"
+            value={preferences}
+            onChange={e => setPreferences(e.target.value)}
+            rows={3}
+            style={{ resize: 'vertical', marginBottom: 12 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+              Отмена
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => onOptimize(preferences || undefined)}
+              disabled={loading}
+              style={{ flex: 1 }}
+            >
+              {loading ? 'Анализ...' : 'Оптимизировать'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // step === 'proposal'
+  if (!proposal) return null;
+
+  // Группируем изменения по дню
+  const byDay = new Map<string, ScheduleChange[]>();
+  for (const change of proposal.changes) {
+    const dayKey = new Date(change.newDeadline).toISOString().slice(0, 10);
+    if (!byDay.has(dayKey)) byDay.set(dayKey, []);
+    byDay.get(dayKey)!.push(change);
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card slide-up" onClick={e => e.stopPropagation()} style={{ maxHeight: '80vh', overflow: 'auto' }}>
+        <h3 style={{ marginBottom: 8, fontSize: 18 }}>Предложение по оптимизации</h3>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
+          Оставляем на сегодня: <strong>{proposal.keepTodayCount}</strong> задач.
+          Переносим: <strong style={{ color: 'var(--mint)' }}>{proposal.movedCount}</strong> задач.
+        </p>
+
+        <div style={{ marginBottom: 16 }}>
+          {[...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dayKey, changes]) => (
+            <div key={dayKey} style={{ marginBottom: 12 }}>
+              <div style={{
+                fontSize: 13, fontWeight: 600, color: 'var(--mint)',
+                marginBottom: 6, paddingBottom: 4,
+                borderBottom: '1px solid var(--glass-border)',
+              }}>
+                {formatRelativeDay(dayKey + 'T12:00:00')}
+              </div>
+              {changes.map(change => (
+                <div key={change.taskId} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 0', fontSize: 14,
+                }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>&#8594;</span>
+                  <span style={{ flex: 1 }}>{change.title}</span>
+                  {change.priority && (
+                    <span className={`priority-badge priority-${change.priority}`} style={{ fontSize: 10 }}>
+                      {change.priority}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+            Отмена
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={onApply}
+            disabled={loading}
+            style={{ flex: 1 }}
+          >
+            {loading ? 'Применяем...' : 'Применить'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TasksPage() {
   const {
     categories, loadCategories, addCategory, updateCategory, deleteCategory,
     tasks, loadTasks, addTask, updateTask, deleteTask,
     user, logout,
+    scheduleStatus, scheduleProposal, loading,
+    loadScheduleStatus, optimizeSchedule, applyOptimization, revertOptimization, clearProposal,
   } = useStore();
 
   const [addingTaskFor, setAddingTaskFor] = useState<{ categoryId: string; title?: string } | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [quickTask, setQuickTask] = useState('');
+  const [showOptimizeModal, setShowOptimizeModal] = useState(false);
+  const [optimizeStep, setOptimizeStep] = useState<'input' | 'proposal'>('input');
 
   useEffect(() => {
     loadCategories();
     loadTasks();
-  }, [loadCategories, loadTasks]);
+    loadScheduleStatus();
+  }, [loadCategories, loadTasks, loadScheduleStatus]);
 
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -393,6 +532,33 @@ export function TasksPage() {
     }
   };
 
+  const handleOpenOptimize = () => {
+    setOptimizeStep('input');
+    clearProposal();
+    setShowOptimizeModal(true);
+  };
+
+  const handleOptimize = async (preferences?: string) => {
+    await optimizeSchedule(preferences);
+    setOptimizeStep('proposal');
+  };
+
+  const handleApplyOptimization = async () => {
+    await applyOptimization();
+    setShowOptimizeModal(false);
+    setOptimizeStep('input');
+  };
+
+  const handleCloseOptimize = () => {
+    setShowOptimizeModal(false);
+    setOptimizeStep('input');
+    clearProposal();
+  };
+
+  const handleRevert = async () => {
+    await revertOptimization();
+  };
+
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 16 }}>
       {/* Header */}
@@ -420,6 +586,46 @@ export function TasksPage() {
         />
         <button type="submit" className="btn btn-icon">+</button>
       </form>
+
+      {/* Revert banner */}
+      {scheduleStatus?.hasSnapshot && (
+        <div className="glass-card fade-in" style={{
+          padding: '12px 16px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 12,
+          border: '1px solid var(--mint-dim)',
+        }}>
+          <span style={{ fontSize: 14, flex: 1, color: 'var(--text-secondary)' }}>
+            Расписание было оптимизировано
+          </span>
+          <button
+            className="btn btn-secondary"
+            onClick={handleRevert}
+            disabled={loading}
+            style={{ fontSize: 13, padding: '6px 14px' }}
+          >
+            {loading ? 'Откат...' : 'Откатить'}
+          </button>
+        </div>
+      )}
+
+      {/* Overload optimize button */}
+      {scheduleStatus?.isOverloaded && !scheduleStatus.hasSnapshot && (
+        <button
+          className="btn optimize-btn fade-in"
+          onClick={handleOpenOptimize}
+          style={{
+            width: '100%', marginBottom: 16, padding: '14px 20px',
+            background: 'linear-gradient(135deg, rgba(170,215,205,0.12), rgba(170,215,205,0.04))',
+            border: '1px solid var(--mint-dim)',
+            borderRadius: 'var(--radius-lg)',
+            color: 'var(--mint)', fontWeight: 600, fontSize: 15,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>&#9889;</span>
+          Оптимизировать расписание
+        </button>
+      )}
 
       {/* Categories header */}
       <div style={{
@@ -467,6 +673,18 @@ export function TasksPage() {
           category={editingCategory || undefined}
           onClose={() => { setShowCategoryModal(false); setEditingCategory(null); }}
           onSubmit={handleSaveCategory}
+        />
+      )}
+      {showOptimizeModal && (
+        <OptimizeModal
+          step={optimizeStep}
+          totalMinutes={scheduleStatus?.totalMinutesToday ?? 0}
+          taskCount={scheduleStatus?.taskCount ?? 0}
+          proposal={scheduleProposal}
+          loading={loading}
+          onOptimize={handleOptimize}
+          onApply={handleApplyOptimization}
+          onClose={handleCloseOptimize}
         />
       )}
     </div>

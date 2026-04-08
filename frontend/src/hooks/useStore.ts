@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
-import type { User, Category, Task, TimerSession, Analytics } from '../types';
+import type { User, Category, Task, TimerSession, Analytics, ScheduleStatus, ScheduleProposal } from '../types';
 
 interface AppStore {
   // Auth
@@ -36,6 +36,15 @@ interface AppStore {
   // Analytics
   analytics: Analytics | null;
   loadAnalytics: (days?: number) => Promise<void>;
+
+  // Schedule optimization
+  scheduleStatus: ScheduleStatus | null;
+  scheduleProposal: ScheduleProposal | null;
+  loadScheduleStatus: () => Promise<void>;
+  optimizeSchedule: (preferences?: string) => Promise<void>;
+  applyOptimization: () => Promise<void>;
+  revertOptimization: () => Promise<void>;
+  clearProposal: () => void;
 
   // UI
   loading: boolean;
@@ -178,6 +187,62 @@ export const useStore = create<AppStore>((set, get) => ({
       set({ error: e.message });
     }
   },
+
+  // Schedule optimization
+  scheduleStatus: null,
+  scheduleProposal: null,
+
+  loadScheduleStatus: async () => {
+    try {
+      const status = await api.schedule.status();
+      set({ scheduleStatus: status });
+    } catch { /* ignore */ }
+  },
+
+  optimizeSchedule: async (preferences) => {
+    set({ loading: true, error: null });
+    try {
+      const proposal = await api.schedule.optimize(preferences);
+      set({ scheduleProposal: proposal, loading: false });
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
+    }
+  },
+
+  applyOptimization: async () => {
+    const proposal = get().scheduleProposal;
+    if (!proposal) return;
+    set({ loading: true, error: null });
+    try {
+      await api.schedule.apply(
+        proposal.changes.map(c => ({
+          taskId: c.taskId,
+          currentDeadline: c.currentDeadline,
+          newDeadline: c.newDeadline,
+        })),
+      );
+      set({ scheduleProposal: null, loading: false });
+      // Перезагружаем данные
+      await get().loadTasks();
+      await get().loadScheduleStatus();
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
+    }
+  },
+
+  revertOptimization: async () => {
+    set({ loading: true, error: null });
+    try {
+      await api.schedule.revert();
+      set({ loading: false });
+      await get().loadTasks();
+      await get().loadScheduleStatus();
+    } catch (e: any) {
+      set({ error: e.message, loading: false });
+    }
+  },
+
+  clearProposal: () => set({ scheduleProposal: null }),
 
   // UI
   loading: false,

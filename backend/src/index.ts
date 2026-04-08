@@ -10,6 +10,7 @@ import categoriesRouter from './routes/categories';
 import tasksRouter from './routes/tasks';
 import timerRouter from './routes/timer';
 import analyticsRouter from './routes/analyticsRoute';
+import scheduleRouter from './routes/schedule';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/timer', timerRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/schedule', scheduleRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

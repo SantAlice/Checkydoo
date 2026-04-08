@@ -48,6 +48,29 @@ export interface TimerSession {
   task?: { id: string; title: string };
 }
 
+export interface ScheduleStatus {
+  isOverloaded: boolean;
+  totalMinutesToday: number;
+  taskCount: number;
+  hasSnapshot: boolean;
+}
+
+export interface ScheduleChange {
+  taskId: string;
+  title: string;
+  priority: string | null;
+  categoryName: string;
+  currentDeadline: string;
+  newDeadline: string;
+}
+
+export interface ScheduleProposal {
+  totalTasksToday: number;
+  keepTodayCount: number;
+  movedCount: number;
+  changes: ScheduleChange[];
+}
+
 export interface Analytics {
   timeDistribution: {
     category: string;

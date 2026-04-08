@@ -59,4 +59,13 @@ export const api = {
   analytics: {
     get: (days = 30) => request<any>(`/analytics?days=${days}`),
   },
+  schedule: {
+    status: () => request<any>('/schedule/status'),
+    optimize: (preferences?: string) =>
+      request<any>('/schedule/optimize', { method: 'POST', body: JSON.stringify({ preferences }) }),
+    apply: (changes: { taskId: string; currentDeadline: string; newDeadline: string }[]) =>
+      request<any>('/schedule/apply', { method: 'POST', body: JSON.stringify({ changes }) }),
+    revert: () =>
+      request<any>('/schedule/revert', { method: 'POST' }),
+  },
 };

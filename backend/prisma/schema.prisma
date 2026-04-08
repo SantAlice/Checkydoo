@@ -22,6 +22,7 @@ model User {
 
   categories   Category[]
   timerSessions TimerSession[]
+  scheduleSnapshot ScheduleSnapshot?
 
   @@map("users")
 }
@@ -104,4 +105,15 @@ model TimerSession {
   @@index([taskId])
   @@index([startedAt])
   @@map("timer_sessions")
+}
+
+model ScheduleSnapshot {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  changes   Json     // [{ taskId, oldDeadline, newDeadline }]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("schedule_snapshots")
 }

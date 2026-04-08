@@ -320,3 +320,15 @@ body {
   max-width: 460px;
   padding: 24px;
 }
+
+/* ===== Optimize button ===== */
+
+.optimize-btn {
+  transition: all 0.25s ease;
+}
+
+.optimize-btn:hover {
+  background: linear-gradient(135deg, rgba(170,215,205,0.2), rgba(170,215,205,0.08)) !important;
+  box-shadow: 0 4px 20px var(--mint-dim);
+  transform: translateY(-1px);
+}
