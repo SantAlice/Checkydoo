@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useStore } from '../hooks/useStore';
 import type { Category, Task, Priority, ScheduleChange } from '../types';
 
@@ -6,213 +6,92 @@ const PRIORITY_LABELS: Record<Priority, string> = {
   LOW: 'Низкий',
   MEDIUM: 'Средний',
   HIGH: 'Высокий',
-  URGENT: 'Срочный',
+  URGENT: 'Срочно',
 };
 
-function formatDeadline(deadline?: string): string {
-  if (!deadline) return '';
-  const d = new Date(deadline);
-  const now = new Date();
-  const diff = d.getTime() - now.getTime();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+function ProgressRing({ percentage, size = 200 }: { percentage: number; size?: number }) {
+  const stroke = 8;
+  const r = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const filled = (percentage / 100) * circ;
 
-  if (days < 0) return `Просрочено на ${Math.abs(days)} дн.`;
-  if (days === 0) return 'Сегодня';
-  if (days === 1) return 'Завтра';
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  return (
+    <svg width={size} height={size} style={{ display: 'block', margin: '0 auto' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke="var(--surface-container-high)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke="var(--primary)" strokeWidth={stroke} strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+      <text x={size / 2} y={size / 2 - 8} textAnchor="middle" fill="var(--primary)"
+        fontSize="3rem" fontWeight="800" fontFamily="Manrope">{percentage}%</text>
+      <text x={size / 2} y={size / 2 + 22} textAnchor="middle" fill="var(--on-surface-variant)"
+        fontSize="0.75rem" fontWeight="700" letterSpacing="2" fontFamily="Manrope">ГОТОВО</text>
+    </svg>
+  );
 }
 
-function formatTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}ч ${m}м`;
-  return `${m}м`;
-}
-
-function TaskItem({ task, onToggle, onDelete }: {
+function TaskItem({ task, onToggle }: {
   task: Task;
   onToggle: () => void;
-  onDelete: () => void;
 }) {
   const isCompleted = task.status === 'COMPLETED';
-  const isOverdue = task.deadline && new Date(task.deadline) < new Date() && !isCompleted;
 
   return (
     <div className="fade-in" style={{
-      display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0',
-      borderBottom: '1px solid var(--glass-border)',
+      display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px',
+      background: 'var(--surface-container)',
+      borderRadius: 'var(--radius-full)',
+      marginBottom: 10,
       opacity: isCompleted ? 0.5 : 1,
     }}>
-      <div
-        className={`checkbox ${isCompleted ? 'checked' : ''}`}
-        onClick={onToggle}
-        style={{ marginTop: 2 }}
-      >
+      <div className={`checkbox ${isCompleted ? 'checked' : ''}`} onClick={onToggle}>
         {isCompleted && '✓'}
       </div>
-
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{
-          fontSize: 15,
+          fontSize: 15, fontWeight: 500,
           textDecoration: isCompleted ? 'line-through' : 'none',
-          color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)',
-          wordBreak: 'break-word',
+          color: isCompleted ? 'var(--text-muted)' : 'var(--on-surface)',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
           {task.title}
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
           {task.priority && (
-            <span className={`priority-badge priority-${task.priority}`}>
+            <span className={`chip chip-${task.priority.toLowerCase()}`}>
               {PRIORITY_LABELS[task.priority]}
             </span>
           )}
           {task.deadline && (
-            <span style={{
-              fontSize: 12,
-              color: isOverdue ? 'var(--scarlet)' : 'var(--text-secondary)',
-              fontWeight: isOverdue ? 600 : 400,
-            }}>
-              {formatDeadline(task.deadline)}
-            </span>
-          )}
-          {task.totalTime > 0 && (
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {formatTime(task.totalTime)}
+            <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+              {new Date(task.deadline).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
         </div>
       </div>
-
-      <button className="btn btn-ghost" onClick={onDelete} style={{ fontSize: 16, color: 'var(--text-muted)' }}>
-        ×
-      </button>
     </div>
   );
 }
 
-function CategorySection({ category, tasks, onAddTask, onToggleTask, onDeleteTask, onEditCategory, onDeleteCategory }: {
-  category: Category;
-  tasks: Task[];
-  onAddTask: (categoryId: string) => void;
-  onToggleTask: (task: Task) => void;
-  onDeleteTask: (taskId: string) => void;
-  onEditCategory: (category: Category) => void;
-  onDeleteCategory: (categoryId: string) => void;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
-  const completedCount = tasks.filter(t => t.status === 'COMPLETED').length;
-
-  return (
-    <div className="glass-card" style={{ padding: '16px 20px', marginBottom: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, userSelect: 'none' }}>
-        <div style={{ width: 10, height: 10, borderRadius: '50%', background: category.color, flexShrink: 0 }} />
-        <span
-          onClick={() => setExpanded(!expanded)}
-          style={{ flex: 1, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
-        >
-          {category.name}
-        </span>
-        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          {completedCount}/{tasks.length}
-        </span>
-        <div style={{ position: 'relative' }}>
-          <button
-            className="btn btn-ghost"
-            onClick={() => setShowMenu(!showMenu)}
-            style={{ fontSize: 16, padding: '4px 8px', color: 'var(--text-muted)' }}
-          >
-            ...
-          </button>
-          {showMenu && (
-            <div style={{
-              position: 'absolute', right: 0, top: '100%', zIndex: 50,
-              padding: 4, minWidth: 160, borderRadius: 'var(--radius-md)',
-              background: '#1A1A1A', border: '1px solid var(--glass-border)',
-            }}>
-              <button
-                className="btn btn-ghost"
-                onClick={() => { setShowMenu(false); onEditCategory(category); }}
-                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px' }}
-              >
-                Редактировать
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => { setShowMenu(false); onDeleteCategory(category.id); }}
-                style={{ width: '100%', justifyContent: 'flex-start', fontSize: 14, padding: '8px 12px', color: 'var(--scarlet)' }}
-              >
-                Удалить
-              </button>
-            </div>
-          )}
-        </div>
-        <span
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-            transition: 'transform var(--transition)', fontSize: 12,
-            color: 'var(--text-muted)', cursor: 'pointer',
-          }}
-        >
-          ▼
-        </span>
-      </div>
-
-      {tasks.length > 0 && (
-        <div style={{
-          height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2,
-          marginTop: 10, overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%', width: `${(completedCount / tasks.length) * 100}%`,
-            background: category.color, borderRadius: 2,
-            transition: 'width 0.3s ease',
-          }} />
-        </div>
-      )}
-
-      {expanded && (
-        <div style={{ marginTop: 8 }}>
-          {tasks.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onToggle={() => onToggleTask(task)}
-              onDelete={() => onDeleteTask(task.id)}
-            />
-          ))}
-          <button
-            onClick={() => onAddTask(category.id)}
-            className="btn btn-ghost"
-            style={{
-              width: '100%', justifyContent: 'flex-start', marginTop: 4,
-              color: 'var(--text-muted)', fontSize: 14, gap: 8,
-            }}
-          >
-            + Добавить задачу
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
+function AddTaskModal({ categoryId, initialTitle, categories, onClose, onSubmit }: {
   categoryId: string;
   initialTitle?: string;
+  categories: Category[];
   onClose: () => void;
   onSubmit: (data: { categoryId: string; title: string; priority?: Priority | null; deadline?: string }) => void;
 }) {
   const [title, setTitle] = useState(initialTitle || '');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [deadline, setDeadline] = useState('');
+  const [catId, setCatId] = useState(categoryId);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     onSubmit({
-      categoryId,
+      categoryId: catId,
       title: title.trim(),
       priority: priority || undefined,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
@@ -222,52 +101,42 @@ function AddTaskModal({ categoryId, initialTitle, onClose, onSubmit }: {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card slide-up" onClick={e => e.stopPropagation()}>
-        <h3 style={{ marginBottom: 16, fontSize: 18 }}>Новая задача</h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            className="glass-input"
-            placeholder="Название задачи..."
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            autoFocus
-          />
+        <h3 style={{ marginBottom: 20, fontSize: 20, fontWeight: 700 }}>Новая задача</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <input className="input" placeholder="Название задачи..." value={title}
+            onChange={e => setTitle(e.target.value)} autoFocus />
+
+          <select className="input" value={catId} onChange={e => setCatId(e.target.value)}>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setPriority(null)}
-              className="priority-badge"
-              style={{
-                cursor: 'pointer',
-                border: priority === null ? '2px solid var(--text-secondary)' : '2px solid transparent',
-                padding: '4px 10px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)',
-              }}
-            >
-              Без приоритета
-            </button>
-            {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as Priority[]).map(p => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPriority(p)}
-                className={`priority-badge priority-${p}`}
+            {[null, 'LOW', 'MEDIUM', 'HIGH', 'URGENT'].map(p => (
+              <button key={p ?? 'none'} type="button"
+                onClick={() => setPriority(p as Priority | null)}
+                className="chip"
                 style={{
-                  cursor: 'pointer', border: priority === p ? '2px solid currentColor' : '2px solid transparent',
-                  padding: '4px 10px', borderRadius: 12,
+                  cursor: 'pointer', padding: '6px 14px',
+                  background: priority === p
+                    ? (p ? undefined : 'var(--surface-container-highest)')
+                    : 'var(--surface-container-high)',
+                  color: priority === p ? (p ? undefined : 'var(--on-surface)') : 'var(--on-surface-variant)',
+                  ...(priority === p && p === 'LOW' ? { background: 'rgba(238,245,103,0.12)', color: 'var(--primary)' } : {}),
+                  ...(priority === p && p === 'MEDIUM' ? { background: 'rgba(201,190,255,0.15)', color: 'var(--secondary)' } : {}),
+                  ...(priority === p && p === 'HIGH' ? { background: 'rgba(232,155,90,0.15)', color: '#E89B5A' } : {}),
+                  ...(priority === p && p === 'URGENT' ? { background: 'rgba(255,180,171,0.15)', color: 'var(--error)' } : {}),
                 }}
               >
-                {PRIORITY_LABELS[p]}
+                {p ? PRIORITY_LABELS[p as Priority] : 'Без'}
               </button>
             ))}
           </div>
-          <input
-            className="glass-input"
-            type="datetime-local"
-            value={deadline}
-            onChange={e => setDeadline(e.target.value)}
-          />
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+
+          <input className="input" type="datetime-local" value={deadline}
+            onChange={e => setDeadline(e.target.value)} />
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button type="button" className="btn btn-surface" onClick={onClose} style={{ flex: 1 }}>
               Отмена
             </button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
@@ -286,7 +155,7 @@ function CategoryModal({ category, onClose, onSubmit }: {
   onSubmit: (data: { name: string; color?: string }) => void;
 }) {
   const [name, setName] = useState(category?.name || '');
-  const [color, setColor] = useState(category?.color || '#AAD7CD');
+  const [color, setColor] = useState(category?.color || '#c9beff');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,38 +163,26 @@ function CategoryModal({ category, onClose, onSubmit }: {
     onSubmit({ name: name.trim(), color });
   };
 
-  const isEditing = !!category;
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card slide-up" onClick={e => e.stopPropagation()}>
-        <h3 style={{ marginBottom: 16, fontSize: 18 }}>
-          {isEditing ? 'Редактировать категорию' : 'Новая категория'}
+        <h3 style={{ marginBottom: 20, fontSize: 20, fontWeight: 700 }}>
+          {category ? 'Редактировать' : 'Новая категория'}
         </h3>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            className="glass-input"
-            placeholder="Название категории..."
-            value={name}
-            onChange={e => setName(e.target.value)}
-            autoFocus
-          />
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Цвет:</span>
-            <input
-              className="glass-input"
-              type="color"
-              value={color}
-              onChange={e => setColor(e.target.value)}
-              style={{ width: 50, padding: 4, cursor: 'pointer' }}
-            />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <input className="input" placeholder="Название категории..."
+            value={name} onChange={e => setName(e.target.value)} autoFocus />
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: 'var(--on-surface-variant)' }}>Цвет:</span>
+            <input className="input" type="color" value={color}
+              onChange={e => setColor(e.target.value)} />
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button type="button" className="btn btn-surface" onClick={onClose} style={{ flex: 1 }}>
               Отмена
             </button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-              {isEditing ? 'Сохранить' : 'Создать'}
+              {category ? 'Сохранить' : 'Создать'}
             </button>
           </div>
         </form>
@@ -345,14 +202,8 @@ function formatRelativeDay(dateStr: string): string {
 }
 
 function OptimizeModal({
-  step,
-  totalMinutes,
-  taskCount,
-  proposal,
-  loading,
-  onOptimize,
-  onApply,
-  onClose,
+  step, totalMinutes, taskCount, proposal, loading,
+  onOptimize, onApply, onClose,
 }: {
   step: 'input' | 'proposal';
   totalMinutes: number;
@@ -369,31 +220,21 @@ function OptimizeModal({
   if (step === 'input') {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-card slide-up" onClick={e => e.stopPropagation()} style={{ maxHeight: '80vh', overflow: 'auto' }}>
-          <h3 style={{ marginBottom: 8, fontSize: 18 }}>Оптимизировать расписание</h3>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            У вас <strong style={{ color: 'var(--scarlet)' }}>{taskCount} задач</strong> на сегодня
-            (~{hours}ч). Это больше 12 часов — перегрузка.
-            ИИ перенесёт менее приоритетные задачи на свободные слоты ближайших дней.
+        <div className="modal-card slide-up" onClick={e => e.stopPropagation()}
+          style={{ maxHeight: '80vh', overflow: 'auto' }}>
+          <h3 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700 }}>Оптимизировать расписание</h3>
+          <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 20, lineHeight: 1.6 }}>
+            У вас <strong style={{ color: 'var(--error)' }}>{taskCount} задач</strong> на сегодня (~{hours}ч).
+            Это больше 12 часов — перегрузка. ИИ перенесёт менее приоритетные задачи на свободные слоты ближайших дней.
           </p>
-          <textarea
-            className="glass-input"
-            placeholder="Ваши пожелания (необязательно)... Например: «не трогай рабочие задачи» или «перенеси всё кроме срочных»"
-            value={preferences}
-            onChange={e => setPreferences(e.target.value)}
-            rows={3}
-            style={{ resize: 'vertical', marginBottom: 12 }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
-              Отмена
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={() => onOptimize(preferences || undefined)}
-              disabled={loading}
-              style={{ flex: 1 }}
-            >
+          <textarea className="input-textarea" rows={3}
+            placeholder="Ваши пожелания (необязательно)..."
+            value={preferences} onChange={e => setPreferences(e.target.value)}
+            style={{ marginBottom: 16 }} />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-surface" onClick={onClose} style={{ flex: 1 }}>Отмена</button>
+            <button className="btn btn-primary" onClick={() => onOptimize(preferences || undefined)}
+              disabled={loading} style={{ flex: 1 }}>
               {loading ? 'Анализ...' : 'Оптимизировать'}
             </button>
           </div>
@@ -402,10 +243,8 @@ function OptimizeModal({
     );
   }
 
-  // step === 'proposal'
   if (!proposal) return null;
 
-  // Группируем изменения по дню
   const byDay = new Map<string, ScheduleChange[]>();
   for (const change of proposal.changes) {
     const dayKey = new Date(change.newDeadline).toISOString().slice(0, 10);
@@ -415,32 +254,28 @@ function OptimizeModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card slide-up" onClick={e => e.stopPropagation()} style={{ maxHeight: '80vh', overflow: 'auto' }}>
-        <h3 style={{ marginBottom: 8, fontSize: 18 }}>Предложение по оптимизации</h3>
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Оставляем на сегодня: <strong>{proposal.keepTodayCount}</strong> задач.
-          Переносим: <strong style={{ color: 'var(--mint)' }}>{proposal.movedCount}</strong> задач.
+      <div className="modal-card slide-up" onClick={e => e.stopPropagation()}
+        style={{ maxHeight: '80vh', overflow: 'auto' }}>
+        <h3 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700 }}>Предложение</h3>
+        <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 20 }}>
+          Оставляем: <strong>{proposal.keepTodayCount}</strong>. Переносим:{' '}
+          <strong style={{ color: 'var(--primary)' }}>{proposal.movedCount}</strong>.
         </p>
-
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 20 }}>
           {[...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([dayKey, changes]) => (
-            <div key={dayKey} style={{ marginBottom: 12 }}>
-              <div style={{
-                fontSize: 13, fontWeight: 600, color: 'var(--mint)',
-                marginBottom: 6, paddingBottom: 4,
-                borderBottom: '1px solid var(--glass-border)',
-              }}>
+            <div key={dayKey} style={{ marginBottom: 16 }}>
+              <div className="section-label" style={{ color: 'var(--primary)', marginBottom: 8 }}>
                 {formatRelativeDay(dayKey + 'T12:00:00')}
               </div>
               {changes.map(change => (
                 <div key={change.taskId} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '6px 0', fontSize: 14,
+                  padding: '8px 0', fontSize: 14,
                 }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>&#8594;</span>
+                  <span style={{ color: 'var(--text-muted)' }}>→</span>
                   <span style={{ flex: 1 }}>{change.title}</span>
                   {change.priority && (
-                    <span className={`priority-badge priority-${change.priority}`} style={{ fontSize: 10 }}>
+                    <span className={`chip chip-${change.priority.toLowerCase()}`} style={{ fontSize: 10 }}>
                       {change.priority}
                     </span>
                   )}
@@ -449,17 +284,9 @@ function OptimizeModal({
             </div>
           ))}
         </div>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-secondary" onClick={onClose} style={{ flex: 1 }}>
-            Отмена
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={onApply}
-            disabled={loading}
-            style={{ flex: 1 }}
-          >
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-surface" onClick={onClose} style={{ flex: 1 }}>Отмена</button>
+          <button className="btn btn-primary" onClick={onApply} disabled={loading} style={{ flex: 1 }}>
             {loading ? 'Применяем...' : 'Применить'}
           </button>
         </div>
@@ -470,19 +297,18 @@ function OptimizeModal({
 
 export function TasksPage() {
   const {
-    categories, loadCategories, addCategory, updateCategory, deleteCategory,
-    tasks, loadTasks, addTask, updateTask, deleteTask,
-    user, logout,
+    categories, loadCategories, addCategory, updateCategory,
+    tasks, loadTasks, addTask, updateTask,
     scheduleStatus, scheduleProposal, loading,
     loadScheduleStatus, optimizeSchedule, applyOptimization, revertOptimization, clearProposal,
   } = useStore();
 
-  const [addingTaskFor, setAddingTaskFor] = useState<{ categoryId: string; title?: string } | null>(null);
+  const [addingTask, setAddingTask] = useState<{ categoryId: string; title?: string } | null>(null);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [quickTask, setQuickTask] = useState('');
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
   const [optimizeStep, setOptimizeStep] = useState<'input' | 'proposal'>('input');
+  const [quickTask, setQuickTask] = useState('');
 
   useEffect(() => {
     loadCategories();
@@ -490,25 +316,44 @@ export function TasksPage() {
     loadScheduleStatus();
   }, [loadCategories, loadTasks, loadScheduleStatus]);
 
+  const incompleteTasks = useMemo(
+    () => tasks.filter(t => t.status !== 'COMPLETED'),
+    [tasks],
+  );
+
+  const todayTasks = useMemo(() => {
+    const now = new Date();
+    const eod = new Date(now);
+    eod.setHours(23, 59, 59, 999);
+    return tasks.filter(t =>
+      t.status !== 'COMPLETED' && t.deadline && new Date(t.deadline) <= eod
+    );
+  }, [tasks]);
+
+  const completionRate = useMemo(() => {
+    if (tasks.length === 0) return 0;
+    const completed = tasks.filter(t => t.status === 'COMPLETED').length;
+    return Math.round((completed / tasks.length) * 100);
+  }, [tasks]);
+
+  const remaining = tasks.length - tasks.filter(t => t.status === 'COMPLETED').length;
+
   const handleQuickAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickTask.trim() || categories.length === 0) return;
-    setAddingTaskFor({ categoryId: categories[0].id, title: quickTask.trim() });
+    setAddingTask({ categoryId: categories[0].id, title: quickTask.trim() });
   };
 
-  const handleToggleTask = async (task: Task) => {
+  const handleToggle = async (task: Task) => {
     const newStatus = task.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
     await updateTask(task.id, { status: newStatus });
     await loadTasks();
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    await deleteTask(taskId);
+    await loadScheduleStatus();
   };
 
   const handleAddTask = async (data: any) => {
     await addTask(data);
-    setAddingTaskFor(null);
+    setAddingTask(null);
     setQuickTask('');
     await loadTasks();
   };
@@ -524,13 +369,7 @@ export function TasksPage() {
     await loadCategories();
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (confirm('Удалить категорию и все её задачи?')) {
-      await deleteCategory(categoryId);
-      await loadCategories();
-      await loadTasks();
-    }
-  };
+
 
   const handleOpenOptimize = () => {
     setOptimizeStep('input');
@@ -543,7 +382,7 @@ export function TasksPage() {
     setOptimizeStep('proposal');
   };
 
-  const handleApplyOptimization = async () => {
+  const handleApply = async () => {
     await applyOptimization();
     setShowOptimizeModal(false);
     setOptimizeStep('input');
@@ -555,137 +394,144 @@ export function TasksPage() {
     clearProposal();
   };
 
-  const handleRevert = async () => {
-    await revertOptimization();
-  };
-
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 16 }}>
+    <div style={{ maxWidth: 500, margin: '0 auto', paddingBottom: 16 }}>
       {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 20,
-      }}>
-        <div>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Привет,</span>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ivory)' }}>{user?.displayName}</h2>
-        </div>
-        <button className="btn btn-ghost" onClick={logout} style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-          Выйти
-        </button>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700 }}>Баланс</h2>
       </div>
 
-      {/* Quick add */}
-      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <input
-          className="glass-input"
-          placeholder="Добавить новую задачу..."
-          value={quickTask}
-          onChange={e => setQuickTask(e.target.value)}
-          style={{ flex: 1 }}
-        />
-        <button type="submit" className="btn btn-icon">+</button>
-      </form>
+      {/* Progress ring */}
+      <div className="card" style={{ padding: '32px 24px', marginBottom: 32, textAlign: 'center' }}>
+        <ProgressRing percentage={completionRate} />
+        <div style={{ marginTop: 16, fontWeight: 700, fontSize: 18 }}>Дневной прогресс</div>
+        <div style={{ color: 'var(--on-surface-variant)', fontSize: 14, marginTop: 4 }}>
+          {remaining > 0
+            ? `Осталось завершить ${remaining} ${remaining === 1 ? 'задачу' : remaining < 5 ? 'задачи' : 'задач'} для достижения цели`
+            : 'Все задачи выполнены!'}
+        </div>
+      </div>
 
       {/* Revert banner */}
       {scheduleStatus?.hasSnapshot && (
-        <div className="glass-card fade-in" style={{
-          padding: '12px 16px', marginBottom: 16,
+        <div className="fade-in" style={{
+          padding: '14px 20px', marginBottom: 20,
           display: 'flex', alignItems: 'center', gap: 12,
-          border: '1px solid var(--mint-dim)',
+          background: 'var(--surface-container)',
+          borderRadius: 'var(--radius-full)',
         }}>
-          <span style={{ fontSize: 14, flex: 1, color: 'var(--text-secondary)' }}>
-            Расписание было оптимизировано
+          <span style={{ fontSize: 14, flex: 1, color: 'var(--on-surface-variant)' }}>
+            Расписание оптимизировано
           </span>
-          <button
-            className="btn btn-secondary"
-            onClick={handleRevert}
-            disabled={loading}
-            style={{ fontSize: 13, padding: '6px 14px' }}
-          >
+          <button className="btn btn-secondary" onClick={() => revertOptimization()}
+            disabled={loading} style={{ fontSize: 13, padding: '8px 16px' }}>
             {loading ? 'Откат...' : 'Откатить'}
           </button>
         </div>
       )}
 
-      {/* Overload optimize button */}
-      {scheduleStatus?.isOverloaded && !scheduleStatus.hasSnapshot && (
-        <button
-          className="btn optimize-btn fade-in"
-          onClick={handleOpenOptimize}
-          style={{
-            width: '100%', marginBottom: 16, padding: '14px 20px',
-            background: 'linear-gradient(135deg, rgba(170,215,205,0.12), rgba(170,215,205,0.04))',
-            border: '1px solid var(--mint-dim)',
-            borderRadius: 'var(--radius-lg)',
-            color: 'var(--mint)', fontWeight: 600, fontSize: 15,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          }}
-        >
-          <span style={{ fontSize: 18 }}>&#9889;</span>
-          Оптимизировать расписание
-        </button>
-      )}
-
-      {/* Categories header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 12,
-      }}>
-        <h3 style={{ fontSize: 17, fontWeight: 600 }}>Списки дел</h3>
-        <button className="btn btn-ghost" onClick={() => setShowCategoryModal(true)} style={{ fontSize: 14, color: 'var(--mint)' }}>
-          + Категория
+      {/* Categories */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 className="section-title">Категории</h3>
+        <button className="btn btn-ghost" onClick={() => setShowCategoryModal(true)}
+          style={{ color: 'var(--on-surface-variant)', fontSize: 20 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+          </svg>
         </button>
       </div>
 
-      {categories.map(cat => (
-        <CategorySection
-          key={cat.id}
-          category={cat}
-          tasks={tasks.filter(t => t.categoryId === cat.id)}
-          onAddTask={(categoryId) => setAddingTaskFor({ categoryId })}
-          onToggleTask={handleToggleTask}
-          onDeleteTask={handleDeleteTask}
-          onEditCategory={(c) => setEditingCategory(c)}
-          onDeleteCategory={handleDeleteCategory}
-        />
+      <div style={{ display: 'flex', gap: 12, marginBottom: 32, overflowX: 'auto', paddingBottom: 4 }}>
+        {categories.map(cat => {
+          const catTasks = tasks.filter(t => t.categoryId === cat.id);
+          const isLavender = cat.color === '#c9beff' || cat.type === 'PERSONAL';
+          return (
+            <div key={cat.id}
+              onClick={() => setEditingCategory(cat)}
+              style={{
+                minWidth: 150, padding: '20px 18px', cursor: 'pointer',
+                background: isLavender ? 'var(--secondary)' : cat.color || 'var(--primary)',
+                color: isLavender ? 'var(--on-secondary)' : 'var(--on-primary)',
+                borderRadius: 'var(--radius-xl)',
+                flexShrink: 0,
+              }}>
+              <div style={{
+                fontSize: 28, fontWeight: 800, marginBottom: 2,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+              }}>
+                {cat.icon || (isLavender ? '👤' : '💼')}
+                <span style={{
+                  fontSize: 13, fontWeight: 700,
+                  background: 'rgba(0,0,0,0.15)', borderRadius: 'var(--radius-full)',
+                  padding: '2px 10px',
+                }}>{catTasks.length}</span>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 16, marginTop: 12 }}>{cat.name}</div>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, opacity: 0.7, marginTop: 2 }}>
+                задач
+              </div>
+            </div>
+          );
+        })}
+        {categories.length === 0 && (
+          <button className="btn btn-primary" onClick={() => setShowCategoryModal(true)}
+            style={{ padding: '16px 24px' }}>
+            Создать категорию
+          </button>
+        )}
+      </div>
+
+      {/* Today tasks */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 className="section-title">Сегодня</h3>
+        <span className="chip" style={{
+          background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)',
+          padding: '4px 14px', fontSize: 13, fontWeight: 600,
+        }}>
+          {todayTasks.length} задач
+        </span>
+      </div>
+
+      {/* Quick add */}
+      <form onSubmit={handleQuickAdd} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <input className="input" placeholder="Добавить задачу..." value={quickTask}
+          onChange={e => setQuickTask(e.target.value)} style={{ flex: 1 }} />
+        <button type="submit" className="btn btn-icon btn-primary" style={{ fontSize: 24 }}>+</button>
+      </form>
+
+      {(todayTasks.length > 0 ? todayTasks : incompleteTasks.slice(0, 8)).map(task => (
+        <TaskItem key={task.id} task={task} onToggle={() => handleToggle(task)} />
       ))}
 
-      {categories.length === 0 && (
-        <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-muted)', marginBottom: 12 }}>Нет категорий</p>
-          <button className="btn btn-primary" onClick={() => setShowCategoryModal(true)}>
-            Создать первую категорию
-          </button>
+      {incompleteTasks.length === 0 && (
+        <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
+          Нет активных задач
         </div>
       )}
 
-      {addingTaskFor && (
-        <AddTaskModal
-          categoryId={addingTaskFor.categoryId}
-          initialTitle={addingTaskFor.title}
-          onClose={() => setAddingTaskFor(null)}
-          onSubmit={handleAddTask}
-        />
+      {/* Overload optimize button */}
+      {scheduleStatus?.isOverloaded && !scheduleStatus.hasSnapshot && (
+        <button className="optimize-btn fade-in" onClick={handleOpenOptimize} style={{ marginTop: 20 }}>
+          ✦ Оптимизировать расписание
+        </button>
+      )}
+
+      {/* Modals */}
+      {addingTask && (
+        <AddTaskModal categoryId={addingTask.categoryId} initialTitle={addingTask.title}
+          categories={categories} onClose={() => setAddingTask(null)} onSubmit={handleAddTask} />
       )}
       {(showCategoryModal || editingCategory) && (
-        <CategoryModal
-          category={editingCategory || undefined}
+        <CategoryModal category={editingCategory || undefined}
           onClose={() => { setShowCategoryModal(false); setEditingCategory(null); }}
-          onSubmit={handleSaveCategory}
-        />
+          onSubmit={handleSaveCategory} />
       )}
       {showOptimizeModal && (
-        <OptimizeModal
-          step={optimizeStep}
+        <OptimizeModal step={optimizeStep}
           totalMinutes={scheduleStatus?.totalMinutesToday ?? 0}
           taskCount={scheduleStatus?.taskCount ?? 0}
-          proposal={scheduleProposal}
-          loading={loading}
-          onOptimize={handleOptimize}
-          onApply={handleApplyOptimization}
-          onClose={handleCloseOptimize}
-        />
+          proposal={scheduleProposal} loading={loading}
+          onOptimize={handleOptimize} onApply={handleApply} onClose={handleCloseOptimize} />
       )}
     </div>
   );

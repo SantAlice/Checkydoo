@@ -26,64 +26,43 @@ export function AuthPage() {
   return (
     <div style={{
       height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16,
+      padding: 20, background: 'var(--surface)',
     }}>
       <div className="slide-up" style={{
-        width: '100%', maxWidth: 400, padding: 32,
-        background: 'rgba(255, 255, 255, 0.04)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: 'var(--radius-lg)',
+        width: '100%', maxWidth: 400, padding: 36,
+        background: 'var(--surface-container)',
+        borderRadius: 'var(--radius-xl)',
       }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
-            fontSize: 40, marginBottom: 8,
-            color: 'var(--mint)',
+            width: 64, height: 64, borderRadius: 'var(--radius-full)',
+            background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px', fontSize: 28,
           }}>✓</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'var(--ivory)' }}>
-            Checkydoo
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800 }}>Checkydoo</h1>
+          <p style={{ color: 'var(--on-surface-variant)', fontSize: 14, marginTop: 6 }}>
             {isRegister ? 'Создайте аккаунт' : 'Войдите в аккаунт'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {isRegister && (
-            <input
-              className="glass-input"
-              type="text"
-              placeholder="Ваше имя"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              required
-            />
+            <input className="input" type="text" placeholder="Ваше имя"
+              value={displayName} onChange={e => setDisplayName(e.target.value)} required />
           )}
-          <input
-            className="glass-input"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="glass-input"
-            type="password"
-            placeholder="Пароль"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            minLength={8}
-          />
+          <input className="input" type="email" placeholder="Email"
+            value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className="input" type="password" placeholder="Пароль"
+            value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
 
           {localError && (
-            <div style={{ color: 'var(--scarlet)', fontSize: 13, textAlign: 'center' }}>
+            <div style={{ color: 'var(--error)', fontSize: 13, textAlign: 'center' }}>
               {localError}
             </div>
           )}
 
           <button className="btn btn-primary" type="submit" disabled={loading} style={{
-            width: '100%', padding: '14px', fontSize: 15, marginTop: 4,
+            width: '100%', padding: '16px', fontSize: 16, marginTop: 4,
           }}>
             {loading ? '...' : (isRegister ? 'Зарегистрироваться' : 'Войти')}
           </button>
@@ -92,9 +71,9 @@ export function AuthPage() {
         <button
           onClick={() => { setIsRegister(!isRegister); setLocalError(''); }}
           style={{
-            display: 'block', width: '100%', marginTop: 16, textAlign: 'center',
-            background: 'none', border: 'none', color: 'var(--mint)',
-            cursor: 'pointer', fontSize: 14, fontFamily: 'inherit',
+            display: 'block', width: '100%', marginTop: 20, textAlign: 'center',
+            background: 'none', border: 'none', color: 'var(--primary)',
+            cursor: 'pointer', fontSize: 14, fontFamily: 'inherit', fontWeight: 600,
           }}
         >
           {isRegister ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться'}

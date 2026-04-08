@@ -3,59 +3,93 @@ import { useStore } from '../hooks/useStore';
 import type { Analytics } from '../types';
 
 const TYPE_COLORS: Record<string, string> = {
-  WORK: '#4A90D9',
-  PERSONAL: '#AAD7CD',
+  WORK: '#c9beff',
+  PERSONAL: '#eef567',
   HOBBY: '#E8C97A',
   REST: '#9B8EC4',
-  CUSTOM: '#a89e8c',
+  CUSTOM: '#c9c8b0',
 };
 
-function PieChart({ data }: { data: Analytics['timeDistribution'] }) {
+function ScoreRing({ percentage, size = 200 }: { percentage: number; size?: number }) {
+  const stroke = 10;
+  const r = (size - stroke * 2) / 2;
+  const circ = 2 * Math.PI * r;
+  const filled = (percentage / 100) * circ;
+
+  return (
+    <svg width={size} height={size} style={{ display: 'block', margin: '0 auto' }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke="var(--surface-container-high)" strokeWidth={stroke} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke="var(--primary)" strokeWidth={stroke} strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+      <text x={size / 2} y={size / 2 - 4} textAnchor="middle" fill="var(--primary)"
+        fontSize="3rem" fontWeight="800" fontFamily="Manrope">{percentage}%</text>
+      <text x={size / 2} y={size / 2 + 24} textAnchor="middle" fill="var(--on-surface-variant)"
+        fontSize="0.65rem" fontWeight="700" letterSpacing="2" fontFamily="Manrope">
+        DAILY EQUILIBRIUM
+      </text>
+    </svg>
+  );
+}
+
+function DonutChart({ data }: { data: Analytics['timeDistribution'] }) {
   if (data.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
-        Пока нет данных. Запустите таймер для сбора статистики.
+      <div style={{ textAlign: 'center', padding: 32, color: 'var(--on-secondary)', opacity: 0.6 }}>
+        Пока нет данных
       </div>
     );
   }
 
-  const total = data.reduce((s, d) => s + d.percentage, 0) || 1;
+  const total = data.reduce((s, d) => s + d.totalMinutes, 0) || 1;
   let cumulative = 0;
+  const size = 140;
+  const outerR = 65;
+  const innerR = 42;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 24, justifyContent: 'center' }}>
-      <svg width="160" height="160" viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20, justifyContent: 'center' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         {data.map((item, i) => {
-          const slice = (item.percentage / total) * Math.PI * 2;
+          const slice = (item.totalMinutes / total) * Math.PI * 2;
           const startAngle = cumulative;
           cumulative += slice;
-
-          const x1 = Math.cos(startAngle);
-          const y1 = Math.sin(startAngle);
-          const x2 = Math.cos(startAngle + slice);
-          const y2 = Math.sin(startAngle + slice);
+          const x1o = size / 2 + outerR * Math.cos(startAngle - Math.PI / 2);
+          const y1o = size / 2 + outerR * Math.sin(startAngle - Math.PI / 2);
+          const x2o = size / 2 + outerR * Math.cos(startAngle + slice - Math.PI / 2);
+          const y2o = size / 2 + outerR * Math.sin(startAngle + slice - Math.PI / 2);
+          const x1i = size / 2 + innerR * Math.cos(startAngle + slice - Math.PI / 2);
+          const y1i = size / 2 + innerR * Math.sin(startAngle + slice - Math.PI / 2);
+          const x2i = size / 2 + innerR * Math.cos(startAngle - Math.PI / 2);
+          const y2i = size / 2 + innerR * Math.sin(startAngle - Math.PI / 2);
           const large = slice > Math.PI ? 1 : 0;
 
           return (
-            <path
-              key={i}
-              d={`M 0 0 L ${x1} ${y1} A 1 1 0 ${large} 1 ${x2} ${y2} Z`}
+            <path key={i}
+              d={`M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${large} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${innerR} ${innerR} 0 ${large} 0 ${x2i} ${y2i} Z`}
               fill={TYPE_COLORS[item.type] || TYPE_COLORS.CUSTOM}
-              stroke="var(--bg-dark)"
-              strokeWidth="0.02"
             />
           );
         })}
+        <text x={size / 2} y={size / 2 - 6} textAnchor="middle" fill="var(--on-secondary)"
+          fontSize="11" fontWeight="700" fontFamily="Manrope">Всего</text>
+        <text x={size / 2} y={size / 2 + 12} textAnchor="middle" fill="var(--on-secondary)"
+          fontSize="16" fontWeight="800" fontFamily="Manrope">
+          {Math.round(total / 60)}ч
+        </text>
       </svg>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {data.map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <div style={{
-              width: 10, height: 10, borderRadius: 3,
+              width: 10, height: 10, borderRadius: 'var(--radius-full)',
               background: TYPE_COLORS[item.type] || TYPE_COLORS.CUSTOM,
             }} />
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {item.category}: {item.percentage}% ({item.totalMinutes}м)
+            <span style={{ color: 'var(--on-secondary)' }}>
+              {item.category} ({item.percentage}%)
             </span>
           </div>
         ))}
@@ -64,29 +98,31 @@ function PieChart({ data }: { data: Analytics['timeDistribution'] }) {
   );
 }
 
-function BarChart({ data }: { data: Analytics['weeklyTrend'] }) {
+function WeeklyBars({ data }: { data: Analytics['weeklyTrend'] }) {
   if (data.length === 0) return null;
-
   const maxVal = Math.max(...data.flatMap(d => [d.completed, d.created]), 1);
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 120, justifyContent: 'center' }}>
       {data.map((week, i) => (
         <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end', height: 80 }}>
+          <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 80 }}>
             <div style={{
-              width: 14, background: 'var(--mint)',
-              height: `${(week.created / maxVal) * 80}px`,
-              borderRadius: '3px 3px 0 0', opacity: 0.4,
+              width: 14,
+              background: 'var(--secondary)',
+              height: `${Math.max((week.created / maxVal) * 80, 4)}px`,
+              borderRadius: 'var(--radius-full)',
+              opacity: 0.5,
             }} />
             <div style={{
-              width: 14, background: 'var(--mint)',
-              height: `${(week.completed / maxVal) * 80}px`,
-              borderRadius: '3px 3px 0 0',
+              width: 14,
+              background: week.completed < week.created ? 'var(--error)' : 'var(--secondary)',
+              height: `${Math.max((week.completed / maxVal) * 80, 4)}px`,
+              borderRadius: 'var(--radius-full)',
             }} />
           </div>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-            {new Date(week.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+          <span style={{ fontSize: 10, color: 'var(--on-surface-variant)' }}>
+            {new Date(week.date).toLocaleDateString('ru-RU', { weekday: 'short' }).toUpperCase()}
           </span>
         </div>
       ))}
@@ -95,12 +131,20 @@ function BarChart({ data }: { data: Analytics['weeklyTrend'] }) {
 }
 
 export function AnalyticsPage() {
-  const { analytics, loadAnalytics } = useStore();
+  const {
+    analytics, loadAnalytics,
+    loadScheduleStatus,
+    scheduleProposal, loading,
+    optimizeSchedule, applyOptimization, clearProposal,
+  } = useStore();
   const [period, setPeriod] = useState(30);
+  const [showOptimize, setShowOptimize] = useState(false);
+  const [preferences, setPreferences] = useState('');
 
   useEffect(() => {
     loadAnalytics(period);
-  }, [loadAnalytics, period]);
+    loadScheduleStatus();
+  }, [loadAnalytics, loadScheduleStatus, period]);
 
   if (!analytics) {
     return (
@@ -110,124 +154,160 @@ export function AnalyticsPage() {
     );
   }
 
+  const handleOptimize = async () => {
+    await optimizeSchedule(preferences || undefined);
+  };
+
+  const handleApply = async () => {
+    await applyOptimization();
+    setShowOptimize(false);
+    setPreferences('');
+  };
+
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 16 }}>
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        marginBottom: 20,
-      }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--ivory)' }}>Аналитика</h2>
-        <select
-          className="glass-input"
-          value={period}
-          onChange={e => setPeriod(Number(e.target.value))}
-          style={{ width: 'auto', padding: '6px 12px', fontSize: 13 }}
-        >
-          <option value={7}>7 дней</option>
-          <option value={30}>30 дней</option>
-          <option value={90}>90 дней</option>
-        </select>
+    <div style={{ maxWidth: 500, margin: '0 auto', paddingBottom: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700 }}>Аналитика</h2>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[7, 30, 90].map(d => (
+            <button key={d} onClick={() => setPeriod(d)} className="chip" style={{
+              cursor: 'pointer', padding: '6px 14px',
+              background: period === d ? 'var(--primary)' : 'var(--surface-container-high)',
+              color: period === d ? 'var(--on-primary)' : 'var(--on-surface-variant)',
+            }}>
+              {d}д
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Completion Rate */}
-      <div className="glass-card" style={{ padding: 20, marginBottom: 12, textAlign: 'center' }}>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-          Выполнение задач
-        </div>
-        <div style={{ fontSize: 44, fontWeight: 700, color: 'var(--mint)' }}>
-          {analytics.completionRate}%
-        </div>
+      {/* Score */}
+      <div className="card" style={{ padding: '32px 24px', marginBottom: 32, textAlign: 'center' }}>
+        <ScoreRing percentage={analytics.completionRate} />
         <div style={{
-          height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2,
-          marginTop: 12, overflow: 'hidden',
+          marginTop: 12, fontSize: 14, color: 'var(--on-surface-variant)', textAlign: 'center',
         }}>
-          <div style={{
-            height: '100%', width: `${analytics.completionRate}%`,
-            background: 'var(--mint)', borderRadius: 2,
-            transition: 'width 0.5s ease',
-          }} />
+          Общий балл продуктивности и баланса
         </div>
       </div>
 
       {/* Time distribution */}
-      <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-          Баланс времени
-        </h3>
-        <PieChart data={analytics.timeDistribution} />
+      <h3 className="section-title" style={{ marginBottom: 12 }}>Время по категориям</h3>
+      <div className="card-lavender" style={{ padding: '24px 20px', marginBottom: 32 }}>
+        <DonutChart data={analytics.timeDistribution} />
       </div>
 
       {/* Weekly trend */}
-      <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>
-          Динамика задач
-        </h3>
-        <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 12, color: 'var(--text-muted)' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--mint)', opacity: 0.4, display: 'inline-block' }} />
-            Создано
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--mint)', display: 'inline-block' }} />
-            Выполнено
-          </span>
+      <h3 className="section-title" style={{ marginBottom: 12 }}>Утечка эффективности</h3>
+      <div className="card" style={{ padding: '24px 20px', marginBottom: 32 }}>
+        <WeeklyBars data={analytics.weeklyTrend} />
+        <div style={{
+          fontSize: 12, color: 'var(--on-surface-variant)', textAlign: 'center', marginTop: 12,
+        }}>
+          Красные столбцы показывают критическую потерю фокуса.
         </div>
-        <BarChart data={analytics.weeklyTrend} />
       </div>
+
+      {/* Recommendations as AI Insight */}
+      {analytics.recommendations.length > 0 && (
+        <>
+          <div className="card-lavender" style={{
+            padding: '20px 24px', marginBottom: 32,
+            display: 'flex', gap: 14, alignItems: 'flex-start',
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 'var(--radius-full)',
+              background: 'rgba(48,32,118,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 18 }}>✦</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>AI Инсайт</div>
+              <div style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.85 }}>
+                {analytics.recommendations[0]}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Overdue */}
       {analytics.overdueAnalysis.totalOverdue > 0 && (
-        <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-            Анализ просрочек
-          </h3>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--scarlet)', marginBottom: 8 }}>
-            {analytics.overdueAnalysis.totalOverdue}
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-            просроченных задач
+        <div className="card" style={{ padding: '24px 20px', marginBottom: 32 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 12 }}>
+            <span style={{ fontSize: 32, fontWeight: 800, color: 'var(--error)' }}>
+              {analytics.overdueAnalysis.totalOverdue}
+            </span>
+            <span style={{ fontSize: 14, color: 'var(--on-surface-variant)' }}>просроченных задач</span>
           </div>
           {analytics.overdueAnalysis.byCategory.map((cat, i) => (
             <div key={i} style={{
               display: 'flex', justifyContent: 'space-between',
-              fontSize: 14, padding: '4px 0',
-              borderBottom: '1px solid var(--glass-border)',
+              fontSize: 14, padding: '8px 0',
             }}>
-              <span>{cat.name}</span>
-              <span style={{ fontWeight: 600 }}>{cat.count}</span>
+              <span style={{ color: 'var(--on-surface-variant)' }}>{cat.name}</span>
+              <span style={{ fontWeight: 700 }}>{cat.count}</span>
             </div>
           ))}
-          {analytics.overdueAnalysis.commonPatterns.length > 0 && (
-            <div style={{ marginTop: 12 }}>
-              {analytics.overdueAnalysis.commonPatterns.map((p, i) => (
-                <div key={i} style={{
-                  fontSize: 13, color: 'var(--text-secondary)',
-                  padding: '4px 0', lineHeight: 1.4,
-                }}>
-                  {p}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
-      {/* Recommendations */}
-      <div className="glass-card" style={{ padding: 20, marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>
-          Рекомендации
-        </h3>
-        {analytics.recommendations.map((rec, i) => (
-          <div key={i} style={{
-            fontSize: 14, color: 'var(--text-secondary)',
-            padding: '8px 0', lineHeight: 1.5,
-            borderBottom: i < analytics.recommendations.length - 1
-              ? '1px solid var(--glass-border)' : 'none',
-          }}>
-            {rec}
+      {/* Optimize button */}
+      <button className="optimize-btn" onClick={() => setShowOptimize(true)}>
+        ✦ Оптимизировать расписание
+      </button>
+
+      {/* Optimize modal */}
+      {showOptimize && (
+        <div className="modal-overlay" onClick={() => { setShowOptimize(false); clearProposal(); }}>
+          <div className="modal-card slide-up" onClick={e => e.stopPropagation()}
+            style={{ maxHeight: '80vh', overflow: 'auto' }}>
+            {!scheduleProposal ? (
+              <>
+                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Оптимизация</h3>
+                <textarea className="input-textarea" rows={3}
+                  placeholder="Ваши пожелания (необязательно)..."
+                  value={preferences} onChange={e => setPreferences(e.target.value)}
+                  style={{ marginBottom: 16 }} />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn btn-surface" onClick={() => setShowOptimize(false)} style={{ flex: 1 }}>
+                    Отмена
+                  </button>
+                  <button className="btn btn-primary" onClick={handleOptimize} disabled={loading} style={{ flex: 1 }}>
+                    {loading ? 'Анализ...' : 'Оптимизировать'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Предложение</h3>
+                <p style={{ fontSize: 14, color: 'var(--on-surface-variant)', marginBottom: 16 }}>
+                  Переносим <strong style={{ color: 'var(--primary)' }}>{scheduleProposal.movedCount}</strong> задач
+                </p>
+                {scheduleProposal.changes.map(c => (
+                  <div key={c.taskId} style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: 14,
+                  }}>
+                    <span style={{ color: 'var(--text-muted)' }}>→</span>
+                    <span style={{ flex: 1 }}>{c.title}</span>
+                    <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
+                      {new Date(c.newDeadline).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <button className="btn btn-surface" onClick={() => { setShowOptimize(false); clearProposal(); }}
+                    style={{ flex: 1 }}>Отмена</button>
+                  <button className="btn btn-primary" onClick={handleApply} disabled={loading} style={{ flex: 1 }}>
+                    {loading ? 'Применяем...' : 'Применить'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
